@@ -30,30 +30,24 @@
 #include <avahi-common/malloc.h>
 #include "util.h"
 
-void avahi_hexdump(const void* p, size_t size) {
+void * avahi_hexstring(const void* p, size_t size) {
+    //system("pwd");
+    FILE *fp;
+    fp = fopen("hex_packet.txt","a+");
+    fprintf(fp,"new : ");
     const uint8_t *c = p;
     assert(p);
-
-    printf("Dumping %lu bytes from %p:\n", (unsigned long) size, p);
 
     while (size > 0) {
         unsigned i;
 
         for (i = 0; i < 16; i++) {
-            if (i < size)
-                printf("%02x ", c[i]);
-            else
-                printf("   ");
+            if (i < size){
+                printf("%02x", c[i]);
+                fprintf(fp,"%02x",c[i]);
+		
+	    }
         }
-
-        for (i = 0; i < 16; i++) {
-            if (i < size)
-                printf("%c", c[i] >= 32 && c[i] < 127 ? c[i] : '.');
-            else
-                printf(" ");
-        }
-
-        printf("\n");
 
         c += 16;
 
@@ -62,6 +56,49 @@ void avahi_hexdump(const void* p, size_t size) {
 
         size -= 16;
     }
+    printf("\n");
+    fprintf(fp,"\n");
+    fclose(fp);
+}
+
+void avahi_hexdump(const void* p, size_t size) {
+
+    FILE *fp;
+    fp = fopen("hex_packet_verbose.txt","a+");
+    fprintf(fp,"new : ");
+
+    const uint8_t *c = p;
+    assert(p);
+
+    fprintf(fp,"Dumping %lu bytes from %p:\n", (unsigned long) size, p);
+
+    while (size > 0) {
+        unsigned i;
+
+        for (i = 0; i < 16; i++) {
+            if (i < size)
+                fprintf(fp,"%02x ", c[i]);
+            else
+                fprintf(fp,"   ");
+        }
+
+        for (i = 0; i < 16; i++) {
+            if (i < size)
+                fprintf(fp,"%c", c[i] >= 32 && c[i] < 127 ? c[i] : '.');
+            else
+                fprintf(fp," ");
+        }
+
+        fprintf(fp,"\n");
+
+        c += 16;
+
+        if (size <= 16)
+            break;
+
+        size -= 16;
+    }
+    fclose(fp);
 }
 
 char *avahi_format_mac_address(char *r, size_t l, const uint8_t* mac, size_t size) {

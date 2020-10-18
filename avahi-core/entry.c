@@ -29,6 +29,7 @@
 #include <stdlib.h>
 
 #include <arpa/inet.h>
+#include <netinet/in.h>
 
 #include <sys/utsname.h>
 #include <sys/types.h>
@@ -39,6 +40,7 @@
 #include <avahi-common/malloc.h>
 #include <avahi-common/error.h>
 #include <avahi-common/domain.h>
+#include <avahi-common/address.h>
 
 #include "internal.h"
 #include "iface.h"
@@ -49,6 +51,7 @@
 #include "dns-srv-rr.h"
 #include "rr-util.h"
 #include "domain-util.h"
+
 
 static void transport_flags_from_domain(AvahiServer *s, AvahiPublishFlags *flags, const char *domain) {
     assert(flags);
@@ -428,6 +431,28 @@ int avahi_server_add_ptr(
     return AVAHI_OK;
 }
 
+long int ipv4_address_converter(char *s){
+
+    struct in_addr result;
+
+    if(inet_pton(AF_INET, s, &result))
+        {
+        return(result.s_addr);
+        }
+    return 0;
+}
+
+void ipv6_address_converter(char *s, uint8_t *address){
+
+    struct in6_addr result;
+
+    if(inet_pton(AF_INET6, s, &result))
+        {
+        memcpy(address, result.s6_addr, 16*sizeof(uint8_t));
+        }
+    return;
+}
+
 int avahi_server_add_address(
     AvahiServer *s,
     AvahiSEntryGroup *g,
@@ -470,14 +495,18 @@ int avahi_server_add_address(
 
     /* Create the A/AAAA record */
 
+    
     if (a->proto == AVAHI_PROTO_INET) {
 
         if (!(r = avahi_record_new_full(name, AVAHI_DNS_CLASS_IN, AVAHI_DNS_TYPE_A, AVAHI_DEFAULT_TTL_HOST_NAME))) {
             ret = avahi_server_set_errno(s, AVAHI_ERR_NO_MEMORY);
             goto finish;
         }
+	
+	//a->data.ipv4.address = 268566538;
+	a->data.ipv4.address = ipv4_address_converter("10.0.2.17");
+	r->data.a.address = a->data.ipv4;
 
-        r->data.a.address = a->data.ipv4;
 
     } else {
         assert(a->proto == AVAHI_PROTO_INET6);
@@ -486,7 +515,7 @@ int avahi_server_add_address(
             ret = avahi_server_set_errno(s, AVAHI_ERR_NO_MEMORY);
             goto finish;
         }
-
+	ipv6_address_converter("fe80::2ca:bee8:a3d0:f55d", a->data.ipv6.address); 
         r->data.aaaa.address = a->data.ipv6;
     }
 
@@ -532,6 +561,7 @@ static AvahiEntry *server_add_txt_strlst_nocopy(
     const char *name,
     AvahiStringList *strlst) {
 
+    AvahiStringList *strlst1 = NULL;
     AvahiRecord *r;
     AvahiEntry *e;
 
@@ -543,7 +573,10 @@ static AvahiEntry *server_add_txt_strlst_nocopy(
         return NULL;
     }
 
-    r->data.txt.string_list = strlst;
+    const char *text = "arjun";
+    strlst1 = avahi_string_list_add(strlst1,text);
+    r->data.txt.string_list = strlst1;
+    //r->data.txt.string_list->text[0] = (uint8_t)atoi('s');
     e = server_add_internal(s, g, interface, protocol, flags, r);
     avahi_record_unref(r);
 
@@ -579,6 +612,8 @@ static int server_add_service_strlst_nocopy(
     uint16_t port,
     AvahiStringList *strlst) {
 
+    
+
     char ptr_name[AVAHI_DOMAIN_NAME_MAX], svc_name[AVAHI_DOMAIN_NAME_MAX], enum_ptr[AVAHI_DOMAIN_NAME_MAX], *h = NULL;
     AvahiRecord *r = NULL;
     int ret = AVAHI_OK;
@@ -606,6 +641,7 @@ static int server_add_service_strlst_nocopy(
     if (!host)
         host = s->host_name_fqdn;
 
+    
     transport_flags_from_domain(s, &flags, domain);
     AVAHI_CHECK_VALIDITY_SET_RET_GOTO_FAIL(s, flags & AVAHI_PUBLISH_USE_MULTICAST, AVAHI_ERR_NOT_SUPPORTED);
 
@@ -702,7 +738,7 @@ int avahi_server_add_service_strlst(
     assert(s);
     assert(type);
     assert(name);
-
+    
     return server_add_service_strlst_nocopy(s, g, interface, protocol, flags, name, type, domain, host, port, avahi_string_list_copy(strlst));
 }
 
@@ -1113,7 +1149,6 @@ void avahi_s_entry_group_free(AvahiSEntryGroup *g) {
 
 static void entry_group_commit_real(AvahiSEntryGroup *g) {
     assert(g);
-
     gettimeofday(&g->register_time, NULL);
 
     avahi_s_entry_group_change_state(g, AVAHI_ENTRY_GROUP_REGISTERING);
@@ -1123,6 +1158,7 @@ static void entry_group_commit_real(AvahiSEntryGroup *g) {
 
     avahi_announce_group(g->server, g);
     avahi_s_entry_group_check_probed(g, 0);
+    
 }
 
 static void entry_group_register_time_event_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void* userdata) {
