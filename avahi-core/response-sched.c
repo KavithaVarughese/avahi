@@ -30,6 +30,7 @@
 #include "log.h"
 #include "rr-util.h"
 #include "util.h"
+#include "publish.h"
 
 /* Local packets are supressed this long after sending them */
 #define AVAHI_RESPONSE_HISTORY_MSEC 500
@@ -226,64 +227,121 @@ static int packet_add_response_job(AvahiResponseScheduler *s, AvahiDnsPacket *p,
     return 1;
 }
 
-/*int parse_check(FILE *fp, char *str) {
-    bool    infile = false;
-    char    *line = NULL;
-    size_t  len = 0;
-    ssize_t read;
-
-    while ((read = getline(&line, &len, fp)) != -1) {
-        line[strcspn(line, "\n")] = 0;
-        if (!strcmp(line, str)) {
-            infile = true;
-            break;
-        }
-    }
-    fclose(uuidfp);
-
-    if (line)
-        free(line);
-
-    return 0;
+/*void print_ip_src4(unsigned int ip)
+{
+    unsigned char bytes[4];
+    bytes[0] = ip & 0xFF;
+    bytes[1] = (ip >> 8) & 0xFF;
+    bytes[2] = (ip >> 16) & 0xFF;
+    bytes[3] = (ip >> 24) & 0xFF;   
+    printf("\n=====SRC IP ADDR====\n%d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);        
 }*/
+
+/*int number_of_ips(){
+	int lines = 0;
+	char ch;
+	FILE *fp;
+	fp = fopen("../ipaddre.txt","r");
+	while(!feof(fp))
+	{
+  		ch = fgetc(fp);
+  		if(ch == '\n')
+  		{
+    			lines++;
+  		}
+	}
+	return lines;
+}*/
+
+void init_ip_struct_array(){
+	IpArray[0].flag=0;
+	IpArray[1].flag=0;
+	IpArray[2].flag=0;
+	
+
+	IpArray[0].ip=251789322;
+	IpArray[1].ip=16777343;
+	IpArray[2].ip=285343754;
+}
+
 
 static void send_response_packet(AvahiResponseScheduler *s, AvahiResponseJob *rj) {
    
     AvahiDnsPacket *p;
+    AvahiDnsPacket *pcopy[3];
     unsigned n;
     static int flag = 0;
-    //static int foo = 0; 
-
+    uint32_t original;
+    int index = -1;
+    //Setting up the array
+    static int set = 0;
+    if(set ==0){
+	init_ip_struct_array();
+	set = 1;
+    }
+    //Setting up complete
+     
     assert(s);
     assert(rj);
     
-
     if (!(p = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
         return; /* OOM */
-    n = 1; 
-    
+    n = 1;
 
-    /* Put it in the packet. */
-   if(rj->record->key->type == AVAHI_DNS_TYPE_TXT && flag == 0){
-	        printf("\n----the wanted----%s\n", rj->record->key->name);
-                if (strcmp(rj->record->key->name,"arjun._airplay._tcp.local") == 0)
-                {
-                    flag = 1;
-                }
-                
-            }
+    for (int i = 0 ; i < 3; i ++){
+        if (!(pcopy[i] = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
+        return; /* OOM */
+    }
+
+    if(rj->record->key->type == AVAHI_DNS_TYPE_TXT && flag == 0){
+        if(strcmp(rj->record->key->name,"snoopsxox-VirtualBot._ssh._tcp.local") != 0){
+            for(int i = 0; i < 3; i ++)
+                if (!avahi_dns_packet_append_record(pcopy[i], rj->record, rj->flush_cache, 0))
+                    return 0;
+            flag = 1;
+        }
+    }
     if (packet_add_response_job(s, p, rj)) {
 
-        /* Try to fill up packet with more responses, if available */
-        while (s->jobs) {
-	    
-	    
+        if(flag == 1)
+        {
+            
+            while (s->jobs) {
+            
+            if(s->jobs->record->key->type == AVAHI_DNS_TYPE_A){
+                original = s->jobs->record->data.a.address.address;
+                for(int i = 0; i < 3; i++){
+                    s->jobs->record->data.a.address.address = IpArray[i].ip;
+                    if (!avahi_dns_packet_append_record(pcopy[i], s->jobs->record, s->jobs->flush_cache, 0))
+                        return 0;
+                }
+                s->jobs->record->data.a.address.address = original;
+            }
+            else{
+                for(int i = 0; i < 3; i ++)
+                    if (!avahi_dns_packet_append_record(pcopy[i], s->jobs->record, s->jobs->flush_cache, 0))
+                        return 0;
+            }
+
             if (!packet_add_response_job(s, p, s->jobs))
                 break;
-	    
-	    
+
             n++;
+            }
+
         }
+        else
+        {
+            while (s->jobs) {
+
+            if (!packet_add_response_job(s, p, s->jobs))
+                break;
+
+            n++;
+            }
+        
+        }
+
 
     } else {
         size_t size;
@@ -293,14 +351,12 @@ static void send_response_packet(AvahiResponseScheduler *s, AvahiResponseJob *rj
         /* OK, the packet was too small, so create one that fits */
         size = avahi_record_get_estimate_size(rj->record) + AVAHI_DNS_PACKET_HEADER_SIZE;
 
-        if (!(p = avahi_dns_packet_new_response(size + AVAHI_DNS_PACKET_EXTRA_SIZE, 1))){
-
+        if (!(p = avahi_dns_packet_new_response(size + AVAHI_DNS_PACKET_EXTRA_SIZE, 1)))
             return; /* OOM */
-	}
+
         if (!packet_add_response_job(s, p, rj)) {
             avahi_dns_packet_free(p);
 
-      	    
             avahi_log_warn("Record too large, cannot send");
             job_mark_done(s, rj);
             return;
@@ -308,17 +364,17 @@ static void send_response_packet(AvahiResponseScheduler *s, AvahiResponseJob *rj
     }
 
     avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
-    //avahi_hexdump(AVAHI_DNS_PACKET_DATA(p), p->size);
-    avahi_interface_send_packet(s->interface, p);
-    //FILE *fp;
-    //fp = fopen("hex_packet_verbose.txt","r");
-    if (flag == 1){
-    		printf("\nEnter responce_sched.c 001\n");
-    		avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size);
-		avahi_hexdump(AVAHI_DNS_PACKET_DATA(p), p->size);
-		flag = 2;
+    if(flag == 1){
+        for(int i = 0; i < 3; i++){
+            avahi_dns_packet_set_field(pcopy[i], AVAHI_DNS_FIELD_ANCOUNT, n);
+            avahi_hexstring(AVAHI_DNS_PACKET_DATA(pcopy[i]), pcopy[i]->size);
+	    avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(pcopy[i]), pcopy[i]->size);
+	    avahi_dns_packet_free(pcopy[i]);
+	    
+        }
+	flag = 2;
     }
-    
+    avahi_interface_send_packet(s->interface, p);
     avahi_dns_packet_free(p);
 }
 

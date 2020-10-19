@@ -27,10 +27,23 @@
  * printer registering both an IPP and a BSD LPR service. */
 
 /** A group of locally registered DNS RRs */
-typedef struct AvahiSEntryGroup AvahiSEntryGroup;
 
 #include <avahi-common/cdecl.h>
 #include <avahi-core/core.h>
+
+#include <inttypes.h>
+#include <sys/types.h>
+
+struct IpChecker{
+	uint32_t ip;
+	int flag;
+};
+
+struct IpChecker IpArray[3];
+
+typedef struct AvahiSEntryGroup AvahiSEntryGroup;
+
+
 
 AVAHI_C_DECL_BEGIN
 

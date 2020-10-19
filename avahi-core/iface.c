@@ -41,6 +41,7 @@
 #include "log.h"
 #include "multicast-lookup.h"
 #include "querier.h"
+
 //#include "avahi-client/dbus-print-message.h"
 
 void avahi_interface_address_update_rrs(AvahiInterfaceAddress *a, int remove_rrs) {
@@ -73,18 +74,24 @@ void avahi_interface_address_update_rrs(AvahiInterfaceAddress *a, int remove_rrs
 
             avahi_address_snprint(t, sizeof(t), &a->address);
             avahi_log_info("Registering new address record for %s on %s.%s.", t, a->interface->hardware->name, p == AVAHI_PROTO_UNSPEC ? "*" : avahi_proto_to_string(p));
-	    printf("\n------- UPDATE -------  %d\n", a->address.data.ipv4.address);
-            if (avahi_server_add_address(m->server, a->entry_group, a->interface->hardware->index, p, 0, NULL, &a->address) < 0) {
-                if (!m->server->config.disable_publishing || m->server->error != AVAHI_ERR_NOT_PERMITTED) {
-                    /* suppress warning if disable_publishing set as this is expected state */
-                    avahi_log_warn(__FILE__": avahi_server_add_address() failed: %s", avahi_strerror(m->server->error));
-                }
-                avahi_s_entry_group_free(a->entry_group);
-                a->entry_group = NULL;
-                return;
-            }
-
+	    
+	    //uint32_t ip[3] = {285343754,251789322,16777343};
+	    //for(int i = 0 ; i < 3; i++){
+	    	//(&a->address)->data.ipv4.address = ip[i];
+	    
+            	if (avahi_server_add_address(m->server, a->entry_group, a->interface->hardware->index, p, 0, NULL, &a->address) < 0) {
+                	if (!m->server->config.disable_publishing || m->server->error != AVAHI_ERR_NOT_PERMITTED) {
+                    	/* suppress warning if disable_publishing set as this is expected state */
+                    	avahi_log_warn(__FILE__": avahi_server_add_address() failed: %s", avahi_strerror(m->server->error));
+                	}
+                	avahi_s_entry_group_free(a->entry_group);
+                	a->entry_group = NULL;
+                	return;
+            	}
+	     //}
             avahi_s_entry_group_commit(a->entry_group);
+	    
+	
         }
     } else {
 

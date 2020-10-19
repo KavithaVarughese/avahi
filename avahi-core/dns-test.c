@@ -50,7 +50,7 @@ int main(AVAHI_GCC_UNUSED int argc, AVAHI_GCC_UNUSED char *argv[]) {
     assert(avahi_dns_packet_append_name(p, c = "Cthis\\.is\\.a\\.test\\.with\\.dots.hello.de."));
     assert(avahi_dns_packet_append_name(p, d = "Dthis\\\\is another test.hello.de."));
 
-    avahi_hexdump(AVAHI_DNS_PACKET_DATA(p), p->size);
+    //avahi_hexdump(AVAHI_DNS_PACKET_DATA(p), p->size);
 
     assert(avahi_dns_packet_consume_name(p, t, sizeof(t)) == 0);
     avahi_log_debug(">%s<", t);
@@ -82,7 +82,7 @@ int main(AVAHI_GCC_UNUSED int argc, AVAHI_GCC_UNUSED char *argv[]) {
     assert((l = avahi_rdata_serialize(r, rdata, sizeof(rdata))) != (size_t) -1);
 
     /* Print it */
-    avahi_hexdump(rdata, l);
+    //avahi_hexdump(rdata, l);
 
     /* Create a new record and fill in the data from the blob */
     r2 = avahi_record_new(r->key, AVAHI_DEFAULT_TTL);

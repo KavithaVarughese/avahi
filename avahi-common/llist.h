@@ -70,6 +70,10 @@ AVAHI_C_DECL_BEGIN
                                     _item->name##_next = _item->name##_prev = NULL; \
                                     } while(0)
 
+#define AVAHI_LLIST_NEXT(t, name, item ) t *_item = (item); \
+                                    if (_item->name##_next) \
+                                       _item = _item->name##_next;
+
 AVAHI_C_DECL_END
 
 #endif

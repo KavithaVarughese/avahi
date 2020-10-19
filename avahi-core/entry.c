@@ -53,6 +53,7 @@
 #include "domain-util.h"
 
 
+
 static void transport_flags_from_domain(AvahiServer *s, AvahiPublishFlags *flags, const char *domain) {
     assert(flags);
     assert(domain);
@@ -503,8 +504,9 @@ int avahi_server_add_address(
             goto finish;
         }
 	
-	//a->data.ipv4.address = 268566538;
-	a->data.ipv4.address = ipv4_address_converter("10.0.2.17");
+	
+	//if(a->data.ipv4.address == ipv4_address_converter("10.0.2.16"))
+	//	a->data.ipv4.address = ipv4_address_converter("10.0.2.17");
 	r->data.a.address = a->data.ipv4;
 
 

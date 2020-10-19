@@ -484,13 +484,12 @@ void avahi_server_generate_response(AvahiServer *s, AvahiInterface *i, AvahiDnsP
                     reply = NULL;
                 }
             }
-	    //avahi_hexdump(AVAHI_DNS_PACKET_DATA(reply), reply->size);
+	   
             avahi_record_unref(r);
         }
 
         if (reply) {
             if (avahi_dns_packet_get_field(reply, AVAHI_DNS_FIELD_ANCOUNT) != 0){	
-		avahi_hexdump(AVAHI_DNS_PACKET_DATA(reply),reply->size);
                 avahi_interface_send_packet_unicast(i, reply, a, port);}
             avahi_dns_packet_free(reply);
         }
@@ -1082,15 +1081,7 @@ void print_ip_dest4(unsigned int ip)
     bytes[3] = (ip >> 24) & 0xFF;   
     printf("\n=====DEST4===\n%d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);        
 }
-void print_ip_src4(unsigned int ip)
-{
-    unsigned char bytes[4];
-    bytes[0] = ip & 0xFF;
-    bytes[1] = (ip >> 8) & 0xFF;
-    bytes[2] = (ip >> 16) & 0xFF;
-    bytes[3] = (ip >> 24) & 0xFF;   
-    printf("\n=====SRC4====\n%d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);        
-}
+
 
 static void mcast_socket_event(AvahiWatch *w, int fd, AvahiWatchEvent events, void *userdata) {
     AvahiServer *s = userdata;
@@ -1107,8 +1098,6 @@ static void mcast_socket_event(AvahiWatch *w, int fd, AvahiWatchEvent events, vo
     if (fd == s->fd_ipv4) {
         dest.proto = src.proto = AVAHI_PROTO_INET;
         p = avahi_recv_dns_packet_ipv4(s->fd_ipv4, &src.data.ipv4, &port, &dest.data.ipv4, &iface, &ttl);
-        printf("\n=====SRC-INT===\n%d\n", src.data.ipv4.address);
-	print_ip_src4(src.data.ipv4.address);
         print_ip_dest4(dest.data.ipv4.address);
 	printf("\n######port####### %d #####\n", port);
         printf("\n######iface####### %d #####\n", iface);

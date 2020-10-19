@@ -61,7 +61,7 @@ void * avahi_hexstring(const void* p, size_t size) {
     fclose(fp);
 }
 
-void avahi_hexdump(const void* p, size_t size) {
+void avahi_hexdump_file(const void* p, size_t size) {
 
     FILE *fp;
     fp = fopen("hex_packet_verbose.txt","a+");
@@ -99,6 +99,41 @@ void avahi_hexdump(const void* p, size_t size) {
         size -= 16;
     }
     fclose(fp);
+}
+
+void avahi_hexdump(const void* p, size_t size) {
+
+    const uint8_t *c = p;
+    assert(p);
+
+    printf("Dumping %lu bytes from %p:\n", (unsigned long) size, p);
+
+    while (size > 0) {
+        unsigned i;
+
+        for (i = 0; i < 16; i++) {
+            if (i < size)
+                printf("%02x ", c[i]);
+            else
+                printf("   ");
+        }
+
+        for (i = 0; i < 16; i++) {
+            if (i < size)
+                printf("%c", c[i] >= 32 && c[i] < 127 ? c[i] : '.');
+            else
+                printf(" ");
+        }
+
+        printf("\n");
+
+        c += 16;
+
+        if (size <= 16)
+            break;
+
+        size -= 16;
+    }
 }
 
 char *avahi_format_mac_address(char *r, size_t l, const uint8_t* mac, size_t size) {
