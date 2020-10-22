@@ -404,6 +404,16 @@ void avahi_server_generate_response(AvahiServer *s, AvahiInterface *i, AvahiDnsP
         contained in later packets */
         int tc = p && !!(avahi_dns_packet_get_field(p, AVAHI_DNS_FIELD_FLAGS) & AVAHI_DNS_FLAG_TC);
 
+	/*AvahiEntry *e;
+        AvahiKey *k;
+        k->ref = 1;
+        k->clazz = AVAHI_DNS_CLASS_IN;
+        k->name = "arjun._airplay._tcp.local";
+        k->type = AVAHI_DNS_TYPE_TXT;
+        for (e = avahi_hashmap_lookup(s->entries_by_key, k); e; e = e->by_key_next){
+            printf("\n+++++++++++++++++\n%s\n++++++++++++++++\n",avahi_record_to_string(e->record));
+        }*/
+
         while ((r = avahi_record_list_next(s->record_list, &flush_cache, &unicast_response, &auxiliary))) {
 	    //printf("\n------------\n%s\n------------\n",avahi_record_to_string(r));
 
@@ -416,9 +426,9 @@ void avahi_server_generate_response(AvahiServer *s, AvahiInterface *i, AvahiDnsP
 
             if (flush_cache && !tc && !auxiliary && avahi_record_list_all_flush_cache(s->record_list))
                 im = 1;
+			
 
             if (!avahi_interface_post_response(i, r, flush_cache, a, im) && unicast_response) {
-
                 /* Due to some reasons the record has not been scheduled.
                  * The client requested an unicast response in that
                  * case. Therefore we prepare such a response */

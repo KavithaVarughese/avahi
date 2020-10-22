@@ -59,6 +59,7 @@ libavahi_core_la_SOURCES = \
 	cache.c cache.h \
 	socket.c socket.h \
 	response-sched.c response-sched.h \
+	response-sched_copy.c response-sched_copy.h \
 	query-sched.c query-sched.h \
 	probe-sched.c probe-sched.h \
 	announce.c announce.h \

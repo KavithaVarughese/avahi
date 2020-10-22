@@ -23,6 +23,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <avahi-common/malloc.h>
 #include <avahi-common/dbus.h>
 #include <avahi-common/error.h>
@@ -213,7 +214,7 @@ DBusHandlerResult avahi_dbus_msg_entry_group_impl(DBusConnection *c, DBusMessage
             i->n_entries ++;
 
         avahi_string_list_free(strlst);
-
+	
         return avahi_dbus_respond_ok(c, m);
 
     } else if (dbus_message_is_method_call(m, AVAHI_DBUS_INTERFACE_ENTRY_GROUP, "AddServiceSubtype")) {

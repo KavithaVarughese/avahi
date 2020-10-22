@@ -22,15 +22,17 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h> 
+#include <sys/types.h> 
+#include <unistd.h> 
 
 #include <avahi-common/timeval.h>
 #include <avahi-common/malloc.h>
 
 #include "response-sched.h"
+//#include "response-sched_copy.h"
 #include "log.h"
 #include "rr-util.h"
-#include "util.h"
-#include "publish.h"
 
 /* Local packets are supressed this long after sending them */
 #define AVAHI_RESPONSE_HISTORY_MSEC 500
@@ -76,15 +78,139 @@ struct AvahiResponseScheduler {
     AVAHI_LLIST_HEAD(AvahiResponseJob, suppressed);
 };
 
+static void enumerate_aux_records_callback(AVAHI_GCC_UNUSED AvahiServer *s, AvahiRecord *r, int flush_cache, void* userdata);
+
+//------------------------------------ MINE ---------------------------------------------------
+
+
+
+static int packet_add_response_job_copy(AvahiResponseScheduler *s, AvahiDnsPacket *p, AvahiResponseJob *rj) {
+    assert(s);
+    assert(p);
+    assert(rj);
+
+    /* Try to add this record to the packet */
+    if (!avahi_dns_packet_append_record(p, rj->record, rj->flush_cache, 0))
+        return 0;
+
+    avahi_server_enumerate_aux_records(s->interface->monitor->server, s->interface, rj->record, enumerate_aux_records_callback, rj);
+
+    return 1;
+}
+
+void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end, AvahiResponseJob *rj_copy, AvahiResponseScheduler *s){
+	int Ip_Array[12] = {268566538, 285343754, 302120970, 268566538, 285343754, 302120970, 268566538, 285343754, 302120970,268566538, 285343754, 302120970 };
+	
+	printf("\nSuccessfully in customised packets\n");
+
+
+	AVAHI_LLIST_HEAD(AvahiResponseJob,llcopy);
+	llcopy = begin;
+
+	AvahiResponseJob *rj[6];
+	int j = 0;
+	while(llcopy){
+		rj[j] = llcopy;
+		j++;
+		llcopy = llcopy->jobs_next;
+	}
+	printf("\nJJJJJJJJJJJJJJJJJJ %d \n", j);
+	
+	AvahiResponseJob *tmp = rj[0];
+	rj[0] = rj[2];
+	rj[2] = tmp;
+	tmp = rj[1];
+	rj[1] = rj[3];
+	rj[3] = tmp;
+	rj[4] = rj[5];
+	
+	for(int i = 0; i < 12; i++)
+	{	
+		AvahiDnsPacket *p;
+   		unsigned n;
+
+		if (!(p = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
+        	return; /* OOM */
+    	n = 1;
+		
+		if (packet_add_response_job_copy(s, p, rj_copy)) {
+
+        	/* Try to fill up packet with more responses, if available */
+        	for(j = 0; j < 5 ; j++) {
+        		if(j == 3){
+        			rj[j]->record->data.a.address.address = Ip_Array[i];
+        		}
+            	if (!packet_add_response_job_copy(s, p, rj[j]))
+            	    break;
+            	
+
+            	n++;
+       		}
+    	}
+    	avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
+    	avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size);
+    	avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
+    	avahi_dns_packet_free(p);
+		 
+	}
+}
+
+static void send_response_packet_copy(AvahiResponseScheduler *s, AvahiResponseJob *rj) {
+    AvahiDnsPacket *p;
+    unsigned n;
+
+    assert(s);
+    assert(rj);
+
+    
+    if (!(p = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
+        return; /* OOM */
+    n = 1;
+
+    AvahiResponseJob *rj_copy = rj;
+	AVAHI_LLIST_HEAD(AvahiResponseJob,begin);
+    AVAHI_LLIST_HEAD(AvahiResponseJob,llcopy);
+	AVAHI_LLIST_HEAD(AvahiResponseJob,end);
+	begin = s->jobs;    
+	llcopy = s->jobs;
+	end = s->jobs;
+    
+    /* Put it in the packet. */
+    if (packet_add_response_job_copy(s, p, rj_copy)) {
+
+        /* Try to fill up packet with more responses, if available */
+        while (llcopy) {
+			
+            if (!packet_add_response_job_copy(s, p, llcopy))
+                break;
+			
+			if(begin->jobs_prev){
+				llcopy = begin->jobs_prev;
+				begin = llcopy;
+			}else{
+				llcopy = end->jobs_next;
+				end = llcopy;
+			}
+            n++;
+        }
+
+    } 
+    
+    avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
+    //avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
+    avahi_dns_packet_free(p);
+
+	customized_packets_formation(begin, end, rj_copy, s);
+}
+
+//--------------------------------------------------------------------------------------------------------------
 
 static AvahiResponseJob* job_new(AvahiResponseScheduler *s, AvahiRecord *record, AvahiResponseJobState state) {
-//printf("\nEnter new job definition\n");
     AvahiResponseJob *rj;
 
     assert(s);
     assert(record);
-    
-    printf("\n------------\n%s\n------------\n",avahi_record_to_string(record));
+
     if (!(rj = avahi_new(AvahiResponseJob, 1))) {
         avahi_log_error(__FILE__": Out of memory");
         return NULL;
@@ -97,15 +223,13 @@ static AvahiResponseJob* job_new(AvahiResponseScheduler *s, AvahiRecord *record,
     rj->querier_valid = 0;
 
     if ((rj->state = state) == AVAHI_SCHEDULED){
-        AVAHI_LLIST_PREPEND(AvahiResponseJob, jobs, s->jobs, rj);
-	}
+		printf("\n------------\n%s\n------------\n",avahi_record_to_string(record));
+        AVAHI_LLIST_PREPEND(AvahiResponseJob, jobs, s->jobs, rj);}
     else if (rj->state == AVAHI_DONE)
         AVAHI_LLIST_PREPEND(AvahiResponseJob, jobs, s->history, rj);
     else  /* rj->state == AVAHI_SUPPRESSED */
         AVAHI_LLIST_PREPEND(AvahiResponseJob, jobs, s->suppressed, rj);
 
-    
-    //printf("\n Exit new job definition\n");   
     return rj;
 }
 
@@ -130,7 +254,6 @@ static void job_free(AvahiResponseScheduler *s, AvahiResponseJob *rj) {
 static void elapse_callback(AvahiTimeEvent *e, void* data);
 
 static void job_set_elapse_time(AvahiResponseScheduler *s, AvahiResponseJob *rj, unsigned msec, unsigned jitter) {
-    //printf("\n****Enter job set*****\n");
     struct timeval tv;
 
     assert(s);
@@ -138,12 +261,10 @@ static void job_set_elapse_time(AvahiResponseScheduler *s, AvahiResponseJob *rj,
 
     avahi_elapse_time(&tv, msec, jitter);
 
-   
     if (rj->time_event)
         avahi_time_event_update(rj->time_event, &tv);
     else
         rj->time_event = avahi_time_event_new(s->time_event_queue, &tv, elapse_callback, rj);
-    //printf("\n*****Exit job set*****\n");
 }
 
 static void job_mark_done(AvahiResponseScheduler *s, AvahiResponseJob *rj) {
@@ -201,147 +322,67 @@ void avahi_response_scheduler_clear(AvahiResponseScheduler *s) {
 
 static void enumerate_aux_records_callback(AVAHI_GCC_UNUSED AvahiServer *s, AvahiRecord *r, int flush_cache, void* userdata) {
     AvahiResponseJob *rj = userdata;
-    //AvahiResponseJob *rj1;
+
     assert(r);
     assert(rj);
-	
+
     avahi_response_scheduler_post(rj->scheduler, r, flush_cache, rj->querier_valid ? &rj->querier : NULL, 0);
 }
 
 static int packet_add_response_job(AvahiResponseScheduler *s, AvahiDnsPacket *p, AvahiResponseJob *rj) {
-    printf("\nEnter packet add response\n");
     assert(s);
     assert(p);
     assert(rj);
+
     /* Try to add this record to the packet */
-    
     if (!avahi_dns_packet_append_record(p, rj->record, rj->flush_cache, 0))
         return 0;
 
     /* Ok, this record will definitely be sent, so schedule the
      * auxilliary packets, too */
-    
     avahi_server_enumerate_aux_records(s->interface->monitor->server, s->interface, rj->record, enumerate_aux_records_callback, rj);
     job_mark_done(s, rj);
-    printf("\nExit packet add response\n");
+
     return 1;
 }
 
-/*void print_ip_src4(unsigned int ip)
-{
-    unsigned char bytes[4];
-    bytes[0] = ip & 0xFF;
-    bytes[1] = (ip >> 8) & 0xFF;
-    bytes[2] = (ip >> 16) & 0xFF;
-    bytes[3] = (ip >> 24) & 0xFF;   
-    printf("\n=====SRC IP ADDR====\n%d.%d.%d.%d\n", bytes[0], bytes[1], bytes[2], bytes[3]);        
-}*/
-
-/*int number_of_ips(){
-	int lines = 0;
-	char ch;
-	FILE *fp;
-	fp = fopen("../ipaddre.txt","r");
-	while(!feof(fp))
-	{
-  		ch = fgetc(fp);
-  		if(ch == '\n')
-  		{
-    			lines++;
-  		}
-	}
-	return lines;
-}*/
-
-void init_ip_struct_array(){
-	IpArray[0].flag=0;
-	IpArray[1].flag=0;
-	IpArray[2].flag=0;
-	
-
-	IpArray[0].ip=251789322;
-	IpArray[1].ip=16777343;
-	IpArray[2].ip=285343754;
-}
-
-
 static void send_response_packet(AvahiResponseScheduler *s, AvahiResponseJob *rj) {
-   
+    
     AvahiDnsPacket *p;
-    AvahiDnsPacket *pcopy[3];
     unsigned n;
-    static int flag = 0;
-    uint32_t original;
-    int index = -1;
-    //Setting up the array
-    static int set = 0;
-    if(set ==0){
-	init_ip_struct_array();
-	set = 1;
-    }
-    //Setting up complete
-     
+
     assert(s);
     assert(rj);
-    
+
     if (!(p = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
         return; /* OOM */
     n = 1;
 
-    for (int i = 0 ; i < 3; i ++){
-        if (!(pcopy[i] = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
-        return; /* OOM */
-    }
-
-    if(rj->record->key->type == AVAHI_DNS_TYPE_TXT && flag == 0){
+    /* Put it in the packet. */
+	/*if(rj->record->key->type == AVAHI_DNS_TYPE_TXT){
         if(strcmp(rj->record->key->name,"snoopsxox-VirtualBot._ssh._tcp.local") != 0){
-            for(int i = 0; i < 3; i ++)
-                if (!avahi_dns_packet_append_record(pcopy[i], rj->record, rj->flush_cache, 0))
-                    return 0;
-            flag = 1;
+            pid_t pid, wpid;
+			pid = fork();
+			int status = 0;
+
+			if(pid == 0){
+				printf("\nInside the Child\n");
+				sleep(2);
+				exit(EXIT_SUCCESS);
+			}
+			while ((wpid = wait(&status)) > 0);
         }
-    }
+    }*/
     if (packet_add_response_job(s, p, rj)) {
 
-        if(flag == 1)
-        {
-            
-            while (s->jobs) {
-            
-            if(s->jobs->record->key->type == AVAHI_DNS_TYPE_A){
-                original = s->jobs->record->data.a.address.address;
-                for(int i = 0; i < 3; i++){
-                    s->jobs->record->data.a.address.address = IpArray[i].ip;
-                    if (!avahi_dns_packet_append_record(pcopy[i], s->jobs->record, s->jobs->flush_cache, 0))
-                        return 0;
-                }
-                s->jobs->record->data.a.address.address = original;
-            }
-            else{
-                for(int i = 0; i < 3; i ++)
-                    if (!avahi_dns_packet_append_record(pcopy[i], s->jobs->record, s->jobs->flush_cache, 0))
-                        return 0;
-            }
+        /* Try to fill up packet with more responses, if available */
+        while (s->jobs) {
 
             if (!packet_add_response_job(s, p, s->jobs))
                 break;
 
             n++;
-            }
-
         }
-        else
-        {
-            while (s->jobs) {
-
-            if (!packet_add_response_job(s, p, s->jobs))
-                break;
-
-            n++;
-            }
-        
-        }
-
 
     } else {
         size_t size;
@@ -364,38 +405,26 @@ static void send_response_packet(AvahiResponseScheduler *s, AvahiResponseJob *rj
     }
 
     avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
-    if(flag == 1){
-        for(int i = 0; i < 3; i++){
-            avahi_dns_packet_set_field(pcopy[i], AVAHI_DNS_FIELD_ANCOUNT, n);
-            avahi_hexstring(AVAHI_DNS_PACKET_DATA(pcopy[i]), pcopy[i]->size);
-	    avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(pcopy[i]), pcopy[i]->size);
-	    avahi_dns_packet_free(pcopy[i]);
-	    
-        }
-	flag = 2;
-    }
     avahi_interface_send_packet(s->interface, p);
     avahi_dns_packet_free(p);
 }
 
 static void elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void* data) {
-    //printf("\n-------------------------Enter elapse callback----------------------------------------\n");
+	static foo = 0;
     AvahiResponseJob *rj = data;
-    
-    assert(rj); 
 
-    /*AvahiResponseJob *rj1;
-    for (rj1 = rj->scheduler->jobs;rj1; rj1 = rj1->jobs_next){
-	printf("\n%s %d %d\n", rj1->record->key->name, rj1->record->key->type, rj1->record->ttl);
-	printf("\n--else------\n%s\n------------\n",avahi_record_to_string(rj1->record));
-    }*/
-    
+    assert(rj);
+
     if (rj->state == AVAHI_DONE || rj->state == AVAHI_SUPPRESSED)
         job_free(rj->scheduler, rj);         /* Lets drop this entry */
-    else{
-	
-        send_response_packet(rj->scheduler, rj);}
-    //printf("\n----------------------------------------------Exit elapse callback--------------------------------\n");
+    else
+	{
+		if(rj->record->key->type == AVAHI_DNS_TYPE_TXT  && strcmp(rj->record->key->name,"arjun._airplay._tcp.local") == 0 && foo == 0){
+				foo = 1;
+    	        send_response_packet_copy(rj->scheduler,rj);
+		}
+        send_response_packet(rj->scheduler, rj);
+	}
 }
 
 static AvahiResponseJob* find_scheduled_job(AvahiResponseScheduler *s, AvahiRecord *record) {
@@ -470,7 +499,6 @@ static AvahiResponseJob* find_suppressed_job(AvahiResponseScheduler *s, AvahiRec
 }
 
 int avahi_response_scheduler_post(AvahiResponseScheduler *s, AvahiRecord *record, int flush_cache, const AvahiAddress *querier, int immediately) {
-//printf("\n*********Enter response**************************************************\n");
     AvahiResponseJob *rj;
     struct timeval tv;
 /*     char *t; */
@@ -533,14 +561,11 @@ int avahi_response_scheduler_post(AvahiResponseScheduler *s, AvahiRecord *record
         avahi_record_unref(rj->record);
         rj->record = avahi_record_ref(record);
 
-	
-
         return 1;
     } else {
 /*         avahi_log_debug("Accepted new response job.");  */
 
         /* Create a new job and schedule it */
-	printf("\nFrom here only001\n");
         if (!(rj = job_new(s, record, AVAHI_SCHEDULED)))
             return 0; /* OOM */
 
@@ -550,8 +575,7 @@ int avahi_response_scheduler_post(AvahiResponseScheduler *s, AvahiRecord *record
 
         if ((rj->querier_valid = !!querier))
             rj->querier = *querier;
-	
-	
+
         return 1;
     }
 }
@@ -584,7 +608,6 @@ void avahi_response_scheduler_incoming(AvahiResponseScheduler *s, AvahiRecord *r
         rj->record = avahi_record_ref(record);
     } else
         /* Found no existing history job, so let's create a new one */
-	printf("\nFrom here only002\n");
         if (!(rj = job_new(s, record, AVAHI_DONE)))
             return; /* OOM */
 
@@ -623,7 +646,6 @@ void avahi_response_scheduler_suppress(AvahiResponseScheduler *s, AvahiRecord *r
     } else {
 
         /* Create a new entry */
-	printf("\nFrom here only03\n");
         if (!(rj = job_new(s, record, AVAHI_SUPPRESSED)))
             return; /* OOM */
         rj->querier_valid = 1;
@@ -636,10 +658,9 @@ void avahi_response_scheduler_suppress(AvahiResponseScheduler *s, AvahiRecord *r
 
 void avahi_response_scheduler_force(AvahiResponseScheduler *s) {
     assert(s);
-	printf("\n----------------Enter response force----------------\n");
+
     /* Send all scheduled responses immediately */
     while (s->jobs)
         send_response_packet(s, s->jobs);
-	printf("\n-----------------Exit response force----------------\n");
 }
 
