@@ -23,9 +23,15 @@
 
 #include <stdlib.h>
 #include <stdio.h> 
-#include <sys/types.h> 
-#include <unistd.h> 
 
+#include <string.h>
+#include <sys/types.h> 
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+/*#include <conio.h>*/
+//#include <String.h>
 #include <avahi-common/timeval.h>
 #include <avahi-common/malloc.h>
 
@@ -98,9 +104,35 @@ static int packet_add_response_job_copy(AvahiResponseScheduler *s, AvahiDnsPacke
     return 1;
 }
 
+
+long int ipv4_address_converter(char *s){
+
+    struct in_addr result;
+
+    if(inet_pton(AF_INET, s, &result))
+        {
+        return(result.s_addr);
+        }
+    return 0;
+}
+
+char* csv_get_field(char* line, int num)
+{
+    char* tok;
+    for (tok = strtok(line, ";");
+            tok && *tok;
+            tok = strtok(NULL, ";"))
+    {
+        if (!--num)
+            return tok;
+    }
+    return NULL;
+}
+
 void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end, AvahiResponseJob *rj_copy, AvahiResponseScheduler *s){
-	int Ip_Array[12] = {268566538, 285343754, 302120970, 268566538, 285343754, 302120970, 268566538, 285343754, 302120970,268566538, 285343754, 302120970 };
-	
+	//int Ip_Array[12] = {268566538, 285343754, 302120970, 268566538, 285343754, 302120970, 268566538, 285343754, 302120970,268566538, 285343754, 302120970 };
+	FILE *fp = fopen("ip.csv","r");
+    char line[1024];
 	printf("\nSuccessfully in customised packets\n");
 
 
@@ -124,10 +156,11 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 	rj[3] = tmp;
 	rj[4] = rj[5];
 	
-	for(int i = 0; i < 12; i++)
+	while (fgets(line, 1024, fp))
 	{	
 		AvahiDnsPacket *p;
    		unsigned n;
+        char* tmp = strdup(line);
 
 		if (!(p = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
         	return; /* OOM */
@@ -138,7 +171,7 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
         	/* Try to fill up packet with more responses, if available */
         	for(j = 0; j < 5 ; j++) {
         		if(j == 3){
-        			rj[j]->record->data.a.address.address = Ip_Array[i];
+        			rj[j]->record->data.a.address.address = ipv4_address_converter(csv_get_field(tmp, 1));
         		}
             	if (!packet_add_response_job_copy(s, p, rj[j]))
             	    break;
@@ -146,11 +179,13 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 
             	n++;
        		}
+
     	}
     	avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
     	avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size);
     	avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
     	avahi_dns_packet_free(p);
+        free(tmp);
 		 
 	}
 }
