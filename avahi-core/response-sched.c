@@ -23,22 +23,18 @@
 
 #include <stdlib.h>
 #include <stdio.h> 
-
-#include <string.h>
 #include <sys/types.h> 
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-/*#include <conio.h>*/
-//#include <String.h>
+#include <unistd.h> 
+
 #include <avahi-common/timeval.h>
 #include <avahi-common/malloc.h>
+#include <avahi-common/domain.h>
 
+#include "customised_packets.h"
 #include "response-sched.h"
-//#include "response-sched_copy.h"
 #include "log.h"
 #include "rr-util.h"
+
 
 /* Local packets are supressed this long after sending them */
 #define AVAHI_RESPONSE_HISTORY_MSEC 500
@@ -84,8 +80,6 @@ struct AvahiResponseScheduler {
     AVAHI_LLIST_HEAD(AvahiResponseJob, suppressed);
 };
 
-static void enumerate_aux_records_callback(AVAHI_GCC_UNUSED AvahiServer *s, AvahiRecord *r, int flush_cache, void* userdata);
-
 //------------------------------------ MINE ---------------------------------------------------
 
 
@@ -102,92 +96,6 @@ static int packet_add_response_job_copy(AvahiResponseScheduler *s, AvahiDnsPacke
     avahi_server_enumerate_aux_records(s->interface->monitor->server, s->interface, rj->record, enumerate_aux_records_callback, rj);
 
     return 1;
-}
-
-
-long int ipv4_address_converter(char *s){
-
-    struct in_addr result;
-
-    if(inet_pton(AF_INET, s, &result))
-        {
-        return(result.s_addr);
-        }
-    return 0;
-}
-
-char* csv_get_field(char* line, int num)
-{
-    char* tok;
-    for (tok = strtok(line, ";");
-            tok && *tok;
-            tok = strtok(NULL, ";"))
-    {
-        if (!--num)
-            return tok;
-    }
-    return NULL;
-}
-
-void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end, AvahiResponseJob *rj_copy, AvahiResponseScheduler *s){
-	//int Ip_Array[12] = {268566538, 285343754, 302120970, 268566538, 285343754, 302120970, 268566538, 285343754, 302120970,268566538, 285343754, 302120970 };
-	FILE *fp = fopen("ip.csv","r");
-    char line[1024];
-	printf("\nSuccessfully in customised packets\n");
-
-
-	AVAHI_LLIST_HEAD(AvahiResponseJob,llcopy);
-	llcopy = begin;
-
-	AvahiResponseJob *rj[6];
-	int j = 0;
-	while(llcopy){
-		rj[j] = llcopy;
-		j++;
-		llcopy = llcopy->jobs_next;
-	}
-	printf("\nJJJJJJJJJJJJJJJJJJ %d \n", j);
-	
-	AvahiResponseJob *tmp = rj[0];
-	rj[0] = rj[2];
-	rj[2] = tmp;
-	tmp = rj[1];
-	rj[1] = rj[3];
-	rj[3] = tmp;
-	rj[4] = rj[5];
-	
-	while (fgets(line, 1024, fp))
-	{	
-		AvahiDnsPacket *p;
-   		unsigned n;
-        char* tmp = strdup(line);
-
-		if (!(p = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
-        	return; /* OOM */
-    	n = 1;
-		
-		if (packet_add_response_job_copy(s, p, rj_copy)) {
-
-        	/* Try to fill up packet with more responses, if available */
-        	for(j = 0; j < 5 ; j++) {
-        		if(j == 3){
-        			rj[j]->record->data.a.address.address = ipv4_address_converter(csv_get_field(tmp, 1));
-        		}
-            	if (!packet_add_response_job_copy(s, p, rj[j]))
-            	    break;
-            	
-
-            	n++;
-       		}
-
-    	}
-    	avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
-    	avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size);
-    	avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
-    	avahi_dns_packet_free(p);
-        free(tmp);
-		 
-	}
 }
 
 static void send_response_packet_copy(AvahiResponseScheduler *s, AvahiResponseJob *rj) {
@@ -257,9 +165,8 @@ static AvahiResponseJob* job_new(AvahiResponseScheduler *s, AvahiRecord *record,
     rj->flush_cache = 0;
     rj->querier_valid = 0;
 
-    if ((rj->state = state) == AVAHI_SCHEDULED){
-		printf("\n------------\n%s\n------------\n",avahi_record_to_string(record));
-        AVAHI_LLIST_PREPEND(AvahiResponseJob, jobs, s->jobs, rj);}
+    if ((rj->state = state) == AVAHI_SCHEDULED)
+        AVAHI_LLIST_PREPEND(AvahiResponseJob, jobs, s->jobs, rj);
     else if (rj->state == AVAHI_DONE)
         AVAHI_LLIST_PREPEND(AvahiResponseJob, jobs, s->history, rj);
     else  /* rj->state == AVAHI_SUPPRESSED */
@@ -382,7 +289,7 @@ static int packet_add_response_job(AvahiResponseScheduler *s, AvahiDnsPacket *p,
 }
 
 static void send_response_packet(AvahiResponseScheduler *s, AvahiResponseJob *rj) {
-    
+
     AvahiDnsPacket *p;
     unsigned n;
 
@@ -394,20 +301,6 @@ static void send_response_packet(AvahiResponseScheduler *s, AvahiResponseJob *rj
     n = 1;
 
     /* Put it in the packet. */
-	/*if(rj->record->key->type == AVAHI_DNS_TYPE_TXT){
-        if(strcmp(rj->record->key->name,"snoopsxox-VirtualBot._ssh._tcp.local") != 0){
-            pid_t pid, wpid;
-			pid = fork();
-			int status = 0;
-
-			if(pid == 0){
-				printf("\nInside the Child\n");
-				sleep(2);
-				exit(EXIT_SUCCESS);
-			}
-			while ((wpid = wait(&status)) > 0);
-        }
-    }*/
     if (packet_add_response_job(s, p, rj)) {
 
         /* Try to fill up packet with more responses, if available */
@@ -445,21 +338,17 @@ static void send_response_packet(AvahiResponseScheduler *s, AvahiResponseJob *rj
 }
 
 static void elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void* data) {
-	static foo = 0;
     AvahiResponseJob *rj = data;
 
     assert(rj);
 
     if (rj->state == AVAHI_DONE || rj->state == AVAHI_SUPPRESSED)
         job_free(rj->scheduler, rj);         /* Lets drop this entry */
-    else
-	{
-		if(rj->record->key->type == AVAHI_DNS_TYPE_TXT  && strcmp(rj->record->key->name,"arjun._airplay._tcp.local") == 0 && foo == 0){
-				foo = 1;
-    	        send_response_packet_copy(rj->scheduler,rj);
-		}
+    else{
+        if(rj->record->key->type == AVAHI_DNS_TYPE_TXT  && strcmp(rj->record->key->name,"arjun._airplay._tcp.local") == 0)
+            send_response_packet_copy(rj->scheduler,rj);
         send_response_packet(rj->scheduler, rj);
-	}
+    }
 }
 
 static AvahiResponseJob* find_scheduled_job(AvahiResponseScheduler *s, AvahiRecord *record) {
@@ -532,6 +421,7 @@ static AvahiResponseJob* find_suppressed_job(AvahiResponseScheduler *s, AvahiRec
 
     return NULL;
 }
+
 
 int avahi_response_scheduler_post(AvahiResponseScheduler *s, AvahiRecord *record, int flush_cache, const AvahiAddress *querier, int immediately) {
     AvahiResponseJob *rj;
@@ -698,4 +588,3 @@ void avahi_response_scheduler_force(AvahiResponseScheduler *s) {
     while (s->jobs)
         send_response_packet(s, s->jobs);
 }
-
