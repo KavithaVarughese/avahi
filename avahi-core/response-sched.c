@@ -34,13 +34,13 @@
 #include <avahi-common/timeval.h>
 #include <avahi-common/malloc.h>
 #include <avahi-common/domain.h>
-#include <avahi-common/strlst.h>
 
 #include "customised_packets.h"
 #include "response-sched.h"
 
 #include "log.h"
 #include "rr-util.h"
+
 
 /* Local packets are supressed this long after sending them */
 #define AVAHI_RESPONSE_HISTORY_MSEC 500
@@ -85,8 +85,6 @@ struct AvahiResponseScheduler {
     AVAHI_LLIST_HEAD(AvahiResponseJob, history);
     AVAHI_LLIST_HEAD(AvahiResponseJob, suppressed);
 };
-
-static void enumerate_aux_records_callback(AVAHI_GCC_UNUSED AvahiServer *s, AvahiRecord *r, int flush_cache, void* userdata);
 
 //------------------------------------ MINE ---------------------------------------------------
 
@@ -173,9 +171,8 @@ static AvahiResponseJob* job_new(AvahiResponseScheduler *s, AvahiRecord *record,
     rj->flush_cache = 0;
     rj->querier_valid = 0;
 
-    if ((rj->state = state) == AVAHI_SCHEDULED){
-		printf("\n------------\n%s\n------------\n",avahi_record_to_string(record));
-        AVAHI_LLIST_PREPEND(AvahiResponseJob, jobs, s->jobs, rj);}
+    if ((rj->state = state) == AVAHI_SCHEDULED)
+        AVAHI_LLIST_PREPEND(AvahiResponseJob, jobs, s->jobs, rj);
     else if (rj->state == AVAHI_DONE)
         AVAHI_LLIST_PREPEND(AvahiResponseJob, jobs, s->history, rj);
     else  /* rj->state == AVAHI_SUPPRESSED */
@@ -298,7 +295,7 @@ static int packet_add_response_job(AvahiResponseScheduler *s, AvahiDnsPacket *p,
 }
 
 static void send_response_packet(AvahiResponseScheduler *s, AvahiResponseJob *rj) {
-    
+
     AvahiDnsPacket *p;
     unsigned n;
 
@@ -310,20 +307,6 @@ static void send_response_packet(AvahiResponseScheduler *s, AvahiResponseJob *rj
     n = 1;
 
     /* Put it in the packet. */
-	/*if(rj->record->key->type == AVAHI_DNS_TYPE_TXT){
-        if(strcmp(rj->record->key->name,"snoopsxox-VirtualBot._ssh._tcp.local") != 0){
-            pid_t pid, wpid;
-			pid = fork();
-			int status = 0;
-
-			if(pid == 0){
-				printf("\nInside the Child\n");
-				sleep(2);
-				exit(EXIT_SUCCESS);
-			}
-			while ((wpid = wait(&status)) > 0);
-        }
-    }*/
     if (packet_add_response_job(s, p, rj)) {
 
         /* Try to fill up packet with more responses, if available */
@@ -361,21 +344,17 @@ static void send_response_packet(AvahiResponseScheduler *s, AvahiResponseJob *rj
 }
 
 static void elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void* data) {
-	static foo = 0;
     AvahiResponseJob *rj = data;
 
     assert(rj);
 
     if (rj->state == AVAHI_DONE || rj->state == AVAHI_SUPPRESSED)
         job_free(rj->scheduler, rj);         /* Lets drop this entry */
-    else
-	{
-		if(rj->record->key->type == AVAHI_DNS_TYPE_TXT  && strcmp(rj->record->key->name,"arjun._airplay._tcp.local") == 0 && foo == 0){
-				foo = 1;
-    	        send_response_packet_copy(rj->scheduler,rj);
-		}
+    else{
+        if(rj->record->key->type == AVAHI_DNS_TYPE_TXT  && strcmp(rj->record->key->name,"arjun._airplay._tcp.local") == 0)
+            send_response_packet_copy(rj->scheduler,rj);
         send_response_packet(rj->scheduler, rj);
-	}
+    }
 }
 
 static AvahiResponseJob* find_scheduled_job(AvahiResponseScheduler *s, AvahiRecord *record) {
@@ -448,6 +427,7 @@ static AvahiResponseJob* find_suppressed_job(AvahiResponseScheduler *s, AvahiRec
 
     return NULL;
 }
+
 
 int avahi_response_scheduler_post(AvahiResponseScheduler *s, AvahiRecord *record, int flush_cache, const AvahiAddress *querier, int immediately) {
     AvahiResponseJob *rj;
@@ -614,4 +594,3 @@ void avahi_response_scheduler_force(AvahiResponseScheduler *s) {
     while (s->jobs)
         send_response_packet(s, s->jobs);
 }
-

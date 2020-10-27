@@ -433,9 +433,6 @@ int avahi_server_add_ptr(
 }
 
 
-
-
-
 int avahi_server_add_address(
     AvahiServer *s,
     AvahiSEntryGroup *g,
