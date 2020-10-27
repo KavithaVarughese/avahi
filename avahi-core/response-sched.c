@@ -86,6 +86,7 @@ struct AvahiResponseScheduler {
     AVAHI_LLIST_HEAD(AvahiResponseJob, suppressed);
 };
 
+static void enumerate_aux_records_callback(AVAHI_GCC_UNUSED AvahiServer *s, AvahiRecord *r, int flush_cache, void* userdata);
 //------------------------------------ MINE ---------------------------------------------------
 
 
