@@ -5,6 +5,8 @@
 
 typedef struct AvahiResponseJob AvahiResponseJob;
 
+int file_is_empty(FILE *fp);
+
 long int ipv4_address_converter(char *s);
 
 void ipv6_address_converter(char *s, uint8_t *address);

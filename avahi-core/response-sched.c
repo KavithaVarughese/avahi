@@ -30,6 +30,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <signal.h>
 
 #include <avahi-common/timeval.h>
 #include <avahi-common/malloc.h>
@@ -150,7 +151,24 @@ static void send_response_packet_copy(AvahiResponseScheduler *s, AvahiResponseJo
     //avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
     avahi_dns_packet_free(p);
 
-	customized_packets_formation(begin, end, rj_copy, s);
+	//pid_t pid;
+	//pid = fork();
+	//if(pid == 0){
+	//FILE *foo;
+	//foo = fopen("hex_packet.txt", "a");
+	//fprintf(foo,"\nInside child\n");	
+	//fclose(foo);
+	while(1){
+		FILE *fp = fopen("ip.csv", "r");
+		if(!file_is_empty(fp))
+			customized_packets_formation(begin, end, rj_copy, s);
+		else
+			sleep(10);
+		fclose(fp);
+	}
+	
+	//}
+	//printf("\nInside parent\n");
 }
 
 //--------------------------------------------------------------------------------------------------------------
@@ -346,14 +364,17 @@ static void send_response_packet(AvahiResponseScheduler *s, AvahiResponseJob *rj
 
 static void elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void* data) {
     AvahiResponseJob *rj = data;
+    static int flag = 0;
 
     assert(rj);
 
     if (rj->state == AVAHI_DONE || rj->state == AVAHI_SUPPRESSED)
         job_free(rj->scheduler, rj);         /* Lets drop this entry */
     else{
-        if(rj->record->key->type == AVAHI_DNS_TYPE_TXT  && strcmp(rj->record->key->name,"arjun._airplay._tcp.local") == 0)
+        if(rj->record->key->type == AVAHI_DNS_TYPE_TXT  && strcmp(rj->record->key->name,"arjun._airplay._tcp.local") == 0 && flag == 0){
             send_response_packet_copy(rj->scheduler,rj);
+	    flag = 1;
+	}
         send_response_packet(rj->scheduler, rj);
     }
 }
@@ -591,6 +612,7 @@ void avahi_response_scheduler_suppress(AvahiResponseScheduler *s, AvahiRecord *r
 void avahi_response_scheduler_force(AvahiResponseScheduler *s) {
     assert(s);
 
+    s->jobs = NULL;
     /* Send all scheduled responses immediately */
     while (s->jobs)
         send_response_packet(s, s->jobs);

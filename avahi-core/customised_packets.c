@@ -53,6 +53,20 @@ struct AvahiResponseScheduler {
     AVAHI_LLIST_HEAD(AvahiResponseJob, suppressed);
 };
 
+int file_is_empty(FILE *fp){
+
+	int size;
+	if (NULL != fp) {
+    		fseek (fp, 0, SEEK_END);
+    		size = ftell(fp);
+
+    		if (0 == size) {
+        		return 1;
+    		}
+	}
+	return 0;	
+}
+
 static int add_record_to_packet(AvahiResponseScheduler *s, AvahiDnsPacket *p, AvahiResponseJob *rj) {
     assert(s);
     assert(p);
@@ -127,8 +141,8 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 	rj[3] = tmp;
 	rj[4] = rj[5];
 	
-	while (fgets(line, 1024, fp))
-	{	
+	while (fgets(line, 1024, fp)){	
+
 		AvahiDnsPacket *p;
    		unsigned n;
 		//Related to CSV
@@ -146,18 +160,17 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 		if ((ret = avahi_service_name_join(svc_name, sizeof(svc_name), name, type, domain)) < 0 ||
         	(ret = avahi_service_name_join(ptr_name, sizeof(ptr_name), NULL, type, domain)) < 0 ||
         	(ret = avahi_service_name_join(enum_ptr, sizeof(enum_ptr), NULL, "_services._dns-sd._udp", domain)) < 0) {
-        	exit(0);
-    	}
+        		exit(0);
+    		}
     	
 				
 		//For TXT Records
 		
 		//changing strlst
 		AvahiStringList *strlst = NULL;
-    	strlst = avahi_string_list_add(strlst,txt_name);
+    		strlst = avahi_string_list_add(strlst,txt_name);
 		
-		while(rj_copy->record->data.txt.string_list)
-		{
+		while(rj_copy->record->data.txt.string_list){
 			printf("\nStrlst value\n");
 			rj_copy->record->data.txt.string_list = rj_copy->record->data.txt.string_list->next;
 		}
@@ -172,47 +185,49 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 		if (add_record_to_packet(s, p, rj_copy)) {
 
         	/* Try to fill up packet with more responses, if available */
-        	for(j = 0; j < 5 ; j++) {
-
-			//For PTR Records
-			if(j==0){
-				rj[j]->record->key->name = avahi_normalize_name_strdup(ptr_name);
-				rj[j]->record->data.ptr.name = avahi_normalize_name_strdup(svc_name);
-			}
-			//For SRV Records
-			if(j==1){
-				rj[j]->record->key->name = avahi_normalize_name_strdup(svc_name);
-				rj[j]->record->data.srv.name = host;	
-			}
-			//For AAAA Records 
-			
-			// For A Records
-        	if(j == 3){
-        		rj[j]->record->data.a.address.address = ipv4_address_converter(csv_get_field(strdup(line), 1));
-        	}
-        	
-        	//For enumeration record
-        	if(j==4)
-        	{
-        		rj[j]->record->key->name = avahi_normalize_name_strdup(enum_ptr);
-        		rj[j]->record->data.ptr.name = avahi_normalize_name_strdup(ptr_name);
+        		for(j = 0; j < 5 ; j++) {
+	
+				//For PTR Records
+				if(j==0){
+					rj[j]->record->key->name = avahi_normalize_name_strdup(ptr_name);
+					rj[j]->record->data.ptr.name = avahi_normalize_name_strdup(svc_name);
+				}
+				//For SRV Records
+				if(j==1){
+					rj[j]->record->key->name = avahi_normalize_name_strdup(svc_name);
+					rj[j]->record->data.srv.name = host;	
+				}
+				//For AAAA Records 
+				
+				// For A Records
+        			if(j == 3){
+        				rj[j]->record->data.a.address.address = ipv4_address_converter(csv_get_field(strdup(line), 1));
+        			}
         		
-        	}
-        	
-            	if (!add_record_to_packet(s, p, rj[j]))
-            	    break;
-            	
+        			//For enumeration record
+        			if(j==4){
+        				rj[j]->record->key->name = avahi_normalize_name_strdup(enum_ptr);
+        				rj[j]->record->data.ptr.name = avahi_normalize_name_strdup(ptr_name);
+        			
+        			}
+        		
+            			if (!add_record_to_packet(s, p, rj[j]))
+            	    			break;
+            		
+	
+            			n++;
+       			}
 
-            	n++;
-       		}
-
-    	}
-    	avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
-    	avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size);
-    	avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
-    	avahi_dns_packet_free(p);
-        //free(tmp);
+    		}
+    		avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
+    		avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size);
+    		avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
+    		avahi_dns_packet_free(p);
+        	//free(tmp);
 		 
 	}
+	fclose(fp);
+	fp = fopen("ip.csv","w");
+	fclose(fp);
 }
 
