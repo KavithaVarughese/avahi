@@ -51,6 +51,7 @@
 #include "dns-srv-rr.h"
 #include "rr-util.h"
 #include "domain-util.h"
+#include "customised_packets.h"
 
 
 
@@ -432,27 +433,9 @@ int avahi_server_add_ptr(
     return AVAHI_OK;
 }
 
-long int ipv4_address_converter(char *s){
 
-    struct in_addr result;
 
-    if(inet_pton(AF_INET, s, &result))
-        {
-        return(result.s_addr);
-        }
-    return 0;
-}
 
-void ipv6_address_converter(char *s, uint8_t *address){
-
-    struct in6_addr result;
-
-    if(inet_pton(AF_INET6, s, &result))
-        {
-        memcpy(address, result.s6_addr, 16*sizeof(uint8_t));
-        }
-    return;
-}
 
 int avahi_server_add_address(
     AvahiServer *s,
@@ -507,6 +490,11 @@ int avahi_server_add_address(
 	
 	//if(a->data.ipv4.address == ipv4_address_converter("10.0.2.16"))
 	//	a->data.ipv4.address = ipv4_address_converter("10.0.2.17");
+
+	FILE *fp = fopen("ip_single.csv", "r");
+	char line[1024];
+	fgets(line, 1024, fp) ;
+    	a->data.ipv4.address = ipv4_address_converter(csv_get_field(strdup(line), 1));
 	r->data.a.address = a->data.ipv4;
 
 
@@ -517,7 +505,7 @@ int avahi_server_add_address(
             ret = avahi_server_set_errno(s, AVAHI_ERR_NO_MEMORY);
             goto finish;
         }
-	ipv6_address_converter("fe80::2ca:bee8:a3d0:f55d", a->data.ipv6.address); 
+	//ipv6_address_converter("fe80::2ca:bee8:a3d0:f55d", a->data.ipv6.address); 
         r->data.aaaa.address = a->data.ipv6;
     }
 
@@ -575,10 +563,13 @@ static AvahiEntry *server_add_txt_strlst_nocopy(
         return NULL;
     }
 
-    const char *text = "arjun";
+	FILE *fp = fopen("ip_single.csv", "r");
+	char line[1024];
+	fgets(line, 1024, fp) ;
+    const char *text = csv_get_field(strdup(line), 4);
     strlst1 = avahi_string_list_add(strlst1,text);
     r->data.txt.string_list = strlst1;
-    //r->data.txt.string_list->text[0] = (uint8_t)atoi('s');
+    
     e = server_add_internal(s, g, interface, protocol, flags, r);
     avahi_record_unref(r);
 
@@ -643,7 +634,7 @@ static int server_add_service_strlst_nocopy(
     if (!host)
         host = s->host_name_fqdn;
 
-    
+    printf("\n HOST NAME >>>>>>>>>>>>>>>>>>>>> %s\n", host);
     transport_flags_from_domain(s, &flags, domain);
     AVAHI_CHECK_VALIDITY_SET_RET_GOTO_FAIL(s, flags & AVAHI_PUBLISH_USE_MULTICAST, AVAHI_ERR_NOT_SUPPORTED);
 
@@ -1019,6 +1010,7 @@ int avahi_server_add_dns_server_address(
         hexstring(h, sizeof(h), &address->data, sizeof(AvahiIPv4Address));
         snprintf(n, sizeof(n), "ip-%s.%s", h, domain);
         r = avahi_record_new_full(n, AVAHI_DNS_CLASS_IN, AVAHI_DNS_TYPE_A, AVAHI_DEFAULT_TTL_HOST_NAME);
+    
         r->data.a.address = address->data.ipv4;
     } else {
         hexstring(h, sizeof(h), &address->data, sizeof(AvahiIPv6Address));

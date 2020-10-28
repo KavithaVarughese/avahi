@@ -34,7 +34,6 @@ void * avahi_hexstring(const void* p, size_t size) {
     //system("pwd");
     FILE *fp;
     fp = fopen("hex_packet.txt","a+");
-    fprintf(fp,"new : ");
     const uint8_t *c = p;
     assert(p);
 
@@ -65,7 +64,6 @@ void avahi_hexdump_file(const void* p, size_t size) {
 
     FILE *fp;
     fp = fopen("hex_packet_verbose.txt","a+");
-    fprintf(fp,"new : ");
 
     const uint8_t *c = p;
     assert(p);

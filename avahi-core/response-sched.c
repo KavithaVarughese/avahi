@@ -23,14 +23,22 @@
 
 #include <stdlib.h>
 #include <stdio.h> 
+
+#include <string.h>
 #include <sys/types.h> 
-#include <unistd.h> 
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <avahi-common/timeval.h>
 #include <avahi-common/malloc.h>
+#include <avahi-common/domain.h>
+#include <avahi-common/strlst.h>
 
+#include "customised_packets.h"
 #include "response-sched.h"
-//#include "response-sched_copy.h"
+
 #include "log.h"
 #include "rr-util.h"
 
@@ -96,63 +104,6 @@ static int packet_add_response_job_copy(AvahiResponseScheduler *s, AvahiDnsPacke
     avahi_server_enumerate_aux_records(s->interface->monitor->server, s->interface, rj->record, enumerate_aux_records_callback, rj);
 
     return 1;
-}
-
-void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end, AvahiResponseJob *rj_copy, AvahiResponseScheduler *s){
-	int Ip_Array[12] = {268566538, 285343754, 302120970, 268566538, 285343754, 302120970, 268566538, 285343754, 302120970,268566538, 285343754, 302120970 };
-	
-	printf("\nSuccessfully in customised packets\n");
-
-
-	AVAHI_LLIST_HEAD(AvahiResponseJob,llcopy);
-	llcopy = begin;
-
-	AvahiResponseJob *rj[6];
-	int j = 0;
-	while(llcopy){
-		rj[j] = llcopy;
-		j++;
-		llcopy = llcopy->jobs_next;
-	}
-	printf("\nJJJJJJJJJJJJJJJJJJ %d \n", j);
-	
-	AvahiResponseJob *tmp = rj[0];
-	rj[0] = rj[2];
-	rj[2] = tmp;
-	tmp = rj[1];
-	rj[1] = rj[3];
-	rj[3] = tmp;
-	rj[4] = rj[5];
-	
-	for(int i = 0; i < 12; i++)
-	{	
-		AvahiDnsPacket *p;
-   		unsigned n;
-
-		if (!(p = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
-        	return; /* OOM */
-    	n = 1;
-		
-		if (packet_add_response_job_copy(s, p, rj_copy)) {
-
-        	/* Try to fill up packet with more responses, if available */
-        	for(j = 0; j < 5 ; j++) {
-        		if(j == 3){
-        			rj[j]->record->data.a.address.address = Ip_Array[i];
-        		}
-            	if (!packet_add_response_job_copy(s, p, rj[j]))
-            	    break;
-            	
-
-            	n++;
-       		}
-    	}
-    	avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
-    	avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size);
-    	avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
-    	avahi_dns_packet_free(p);
-		 
-	}
 }
 
 static void send_response_packet_copy(AvahiResponseScheduler *s, AvahiResponseJob *rj) {
@@ -421,7 +372,7 @@ static void elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void* data) {
 	{
 		if(rj->record->key->type == AVAHI_DNS_TYPE_TXT  && strcmp(rj->record->key->name,"arjun._airplay._tcp.local") == 0 && foo == 0){
 				foo = 1;
-    	        send_response_packet_copy(rj->scheduler,rj);
+    	        //send_response_packet_copy(rj->scheduler,rj);
 		}
         send_response_packet(rj->scheduler, rj);
 	}

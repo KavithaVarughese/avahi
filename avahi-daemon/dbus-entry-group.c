@@ -29,6 +29,7 @@
 #include <avahi-common/error.h>
 #include <avahi-common/domain.h>
 #include <avahi-core/log.h>
+#include <avahi-core/customised_packets.h>
 
 #include "dbus-util.h"
 #include "dbus-internal.h"
@@ -203,8 +204,11 @@ DBusHandlerResult avahi_dbus_msg_entry_group_impl(DBusConnection *c, DBusMessage
         if (host && !*host)
             host = NULL;
 
-	name = "arjun";
-	//type = "_chromecast._tcp";
+		FILE *fp = fopen("ip_single.csv", "r");
+		char line[1024];
+		fgets(line, 1024, fp) ;
+		name = csv_get_field(strdup(line), 2);
+		type = csv_get_field(strdup(line), 3);
         if (avahi_server_add_service_strlst(avahi_server, i->entry_group, (AvahiIfIndex) interface, (AvahiProtocol) protocol, (AvahiPublishFlags) flags, name, type, domain, host, port, strlst) < 0) {
             avahi_string_list_free(strlst);
             return avahi_dbus_respond_error(c, m, avahi_server_errno(avahi_server), NULL);
