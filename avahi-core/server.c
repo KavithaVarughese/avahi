@@ -361,7 +361,7 @@ static void append_aux_records_to_list(AvahiServer *s, AvahiInterface *i, AvahiR
 }
 
 void avahi_server_generate_response(AvahiServer *s, AvahiInterface *i, AvahiDnsPacket *p, const AvahiAddress *a, uint16_t port, int legacy_unicast, int immediately) {
-
+	
     assert(s);
     assert(i);
     assert(!legacy_unicast || (a && port > 0 && p));
@@ -369,14 +369,14 @@ void avahi_server_generate_response(AvahiServer *s, AvahiInterface *i, AvahiDnsP
     if (legacy_unicast) {
         AvahiDnsPacket *reply;
         AvahiRecord *r;
-
+	printf("\nAre we here for browse 01\n");
         if (!(reply = avahi_dns_packet_new_reply(p, 512 + AVAHI_DNS_PACKET_EXTRA_SIZE /* unicast DNS maximum packet size is 512 */ , 1, 1)))
             return; /* OOM */
 
         while ((r = avahi_record_list_next(s->record_list, NULL, NULL, NULL))) {
 
             append_aux_records_to_list(s, i, r, 0);
-
+	    printf("\nAre we here for browse 001\n");
             if (avahi_dns_packet_append_record(reply, r, 0, 10))
                 avahi_dns_packet_inc_field(reply, AVAHI_DNS_FIELD_ANCOUNT);
             else {
@@ -394,6 +394,7 @@ void avahi_server_generate_response(AvahiServer *s, AvahiInterface *i, AvahiDnsP
         avahi_dns_packet_free(reply);
 
     } else {
+	//printf("\nAre we here for browse 02\n");
         int unicast_response, flush_cache, auxiliary;
         AvahiDnsPacket *reply = NULL;
         AvahiRecord *r;
@@ -414,7 +415,7 @@ void avahi_server_generate_response(AvahiServer *s, AvahiInterface *i, AvahiDnsP
 
             if (flush_cache && !tc && !auxiliary && avahi_record_list_all_flush_cache(s->record_list))
                 im = 1;
-
+		printf("\nAre we here for browse 02\n");
             if (!avahi_interface_post_response(i, r, flush_cache, a, im) && unicast_response) {
 
                 /* Due to some reasons the record has not been scheduled.
@@ -431,7 +432,7 @@ void avahi_server_generate_response(AvahiServer *s, AvahiInterface *i, AvahiDnsP
                         if (!(reply = avahi_dns_packet_new_reply(p, i->hardware->mtu, 0, 0)))
                             break; /* OOM */
                     }
-
+			printf("\nAre we here for browse 002\n");
                     if (avahi_dns_packet_append_record(reply, r, flush_cache, 0)) {
 
                         /* Appending this record succeeded, so incremeant
@@ -451,7 +452,7 @@ void avahi_server_generate_response(AvahiServer *s, AvahiInterface *i, AvahiDnsP
 
                         if (!(reply = avahi_dns_packet_new_reply(p, size + AVAHI_DNS_PACKET_EXTRA_SIZE, 0, 1)))
                             break; /* OOM */
-
+			printf("\nAre we here for browse 003\n");
                         if (avahi_dns_packet_append_record(reply, r, flush_cache, 0)) {
 
                             /* Appending this record succeeded, so incremeant

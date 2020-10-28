@@ -39,6 +39,7 @@
 #include "xdg-config.h"
 
 static void parse_environment(AvahiDomainBrowser *b) {
+	printf("parse environment\n");
     char buf[AVAHI_DOMAIN_NAME_MAX*3], *e, *t, *p;
 
     assert(b);
@@ -56,6 +57,7 @@ static void parse_environment(AvahiDomainBrowser *b) {
 }
 
 static void parse_domain_file(AvahiDomainBrowser *b) {
+	printf("parse domain file\n");
     FILE *f;
     char buf[AVAHI_DOMAIN_NAME_MAX];
 
@@ -75,12 +77,14 @@ static void parse_domain_file(AvahiDomainBrowser *b) {
 }
 
 static void domain_browser_ref(AvahiDomainBrowser *db) {
+	printf("domain browser ref\n");
     assert(db);
     assert(db->ref >= 1);
     db->ref++;
 }
 
 static void defer_timeout_callback(AvahiTimeout *t, void *userdata) {
+	printf("defer timeout callback\n");
     AvahiDomainBrowser *db = userdata;
     AvahiStringList *l;
     assert(t);
@@ -110,7 +114,7 @@ AvahiDomainBrowser* avahi_domain_browser_new(
     AvahiLookupFlags flags,
     AvahiDomainBrowserCallback callback,
     void *userdata) {
-
+	printf("avahi domain browser new\n");
     AvahiDomainBrowser *db = NULL;
     DBusMessage *message = NULL, *reply = NULL;
     DBusError error;
@@ -232,11 +236,13 @@ fail:
 }
 
 AvahiClient* avahi_domain_browser_get_client (AvahiDomainBrowser *b) {
+	printf("avahi domain browser get client\n");
     assert(b);
     return b->client;
 }
 
 int avahi_domain_browser_free (AvahiDomainBrowser *b) {
+	printf("avahi domain browser free\n");
     AvahiClient *client;
     int r = AVAHI_OK;
 
@@ -264,6 +270,7 @@ int avahi_domain_browser_free (AvahiDomainBrowser *b) {
 }
 
 DBusHandlerResult avahi_domain_browser_event (AvahiClient *client, AvahiBrowserEvent event, DBusMessage *message) {
+	printf("avahi domain browser event\n");
     AvahiDomainBrowser *db = NULL;
     DBusError error;
     const char *path;
@@ -355,6 +362,7 @@ AvahiServiceTypeBrowser* avahi_service_type_browser_new(
     AvahiLookupFlags flags,
     AvahiServiceTypeBrowserCallback callback,
     void *userdata) {
+    printf("avahi service type browser new\n");
 
     AvahiServiceTypeBrowser *b = NULL;
     DBusMessage *message = NULL, *reply = NULL;
@@ -463,11 +471,13 @@ fail:
 }
 
 AvahiClient* avahi_service_type_browser_get_client (AvahiServiceTypeBrowser *b) {
+	printf("avahi service group get client\n");
     assert(b);
     return b->client;
 }
 
 int avahi_service_type_browser_free (AvahiServiceTypeBrowser *b) {
+	printf("avahi service type browser free\n");
     AvahiClient *client;
     int r = AVAHI_OK;
 
@@ -486,6 +496,7 @@ int avahi_service_type_browser_free (AvahiServiceTypeBrowser *b) {
 }
 
 DBusHandlerResult avahi_service_type_browser_event (AvahiClient *client, AvahiBrowserEvent event, DBusMessage *message) {
+	printf("avahi service type browser event\n");
     AvahiServiceTypeBrowser *b = NULL;
     DBusError error;
     const char *path;
@@ -570,6 +581,7 @@ AvahiServiceBrowser* avahi_service_browser_new(
     AvahiLookupFlags flags,
     AvahiServiceBrowserCallback callback,
     void *userdata) {
+    printf("avahi service browser new\n");
 
     AvahiServiceBrowser *b = NULL;
     DBusMessage *message = NULL, *reply = NULL;
@@ -684,11 +696,13 @@ fail:
 }
 
 AvahiClient* avahi_service_browser_get_client (AvahiServiceBrowser *b) {
+	printf("avahi service browser get client\n");
     assert(b);
     return b->client;
 }
 
 int avahi_service_browser_free (AvahiServiceBrowser *b) {
+	printf("avahi service browser free\n");
     AvahiClient *client;
     int r = AVAHI_OK;
 
@@ -708,6 +722,7 @@ int avahi_service_browser_free (AvahiServiceBrowser *b) {
 }
 
 DBusHandlerResult avahi_service_browser_event(AvahiClient *client, AvahiBrowserEvent event, DBusMessage *message) {
+	printf("avahi service browser event\n");
     AvahiServiceBrowser *b = NULL;
     DBusError error;
     const char *path;
@@ -793,6 +808,7 @@ AvahiRecordBrowser* avahi_record_browser_new(
     AvahiLookupFlags flags,
     AvahiRecordBrowserCallback callback,
     void *userdata) {
+    printf("avahi record browser new\n");
 
     AvahiRecordBrowser *b = NULL;
     DBusMessage *message = NULL, *reply = NULL;
@@ -901,11 +917,13 @@ fail:
 }
 
 AvahiClient* avahi_record_browser_get_client (AvahiRecordBrowser *b) {
+	printf("avahi record browser get client\n");
     assert(b);
     return b->client;
 }
 
 int avahi_record_browser_free (AvahiRecordBrowser *b) {
+	printf("avahi record browser free\n");
     AvahiClient *client;
     int r = AVAHI_OK;
 
@@ -924,6 +942,7 @@ int avahi_record_browser_free (AvahiRecordBrowser *b) {
 }
 
 DBusHandlerResult avahi_record_browser_event(AvahiClient *client, AvahiBrowserEvent event, DBusMessage *message) {
+	printf("avahi record browser event\n");
     AvahiRecordBrowser *b = NULL;
     DBusError error;
     const char *path;

@@ -31,6 +31,7 @@
 
 #include "dbus-util.h"
 #include "dbus-internal.h"
+#include "dbus-print-message.h"
 #include "main.h"
 
 void avahi_dbus_entry_group_free(EntryGroupInfo *i) {
@@ -95,6 +96,7 @@ DBusHandlerResult avahi_dbus_msg_entry_group_impl(DBusConnection *c, DBusMessage
     assert(i);
 
     dbus_error_init(&error);
+	//print_message(m,FALSE);
 
     avahi_log_debug(__FILE__": interface=%s, path=%s, member=%s",
                     dbus_message_get_interface(m),

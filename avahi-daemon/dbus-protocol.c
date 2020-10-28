@@ -55,6 +55,7 @@
 #include "dbus-protocol.h"
 #include "dbus-util.h"
 #include "dbus-internal.h"
+#include "dbus-print-message.h"
 #include "main.h"
 
 /* #define VALGRIND_WORKAROUND 1 */
@@ -574,6 +575,7 @@ static DBusHandlerResult dbus_prepare_service_browser_object(ServiceBrowserInfo 
     uint32_t flags;
     char *domain, *type;
 
+	print_message(m,FALSE);
     if (!dbus_message_get_args(
             m, error,
             DBUS_TYPE_INT32, &interface,
@@ -584,7 +586,7 @@ static DBusHandlerResult dbus_prepare_service_browser_object(ServiceBrowserInfo 
             DBUS_TYPE_INVALID) || !type) {
         return dbus_parsing_error("Error parsing Server::ServiceBrowserNew message", error);
     }
-
+	//type = "_kavitha._tcp";
     if (!(client = client_get(dbus_message_get_sender(m), TRUE))) {
         avahi_log_warn("Too many clients, client request failed.");
         return avahi_dbus_respond_error(c, m, AVAHI_ERR_TOO_MANY_CLIENTS, NULL);

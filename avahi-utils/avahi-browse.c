@@ -125,6 +125,7 @@ static void check_terminate(Config *c) {
 }
 
 static ServiceInfo *find_service(AvahiIfIndex interface, AvahiProtocol protocol, const char *name, const char *type, const char *domain) {
+	printf("find service\n");
     ServiceInfo *i;
 
     for (i = services; i; i = i->info_next)
@@ -197,7 +198,7 @@ static void service_resolver_callback(
     AvahiStringList *txt,
     AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
     void *userdata) {
-
+	printf("service resolve callback\n");
     ServiceInfo *i = userdata;
 
     assert(r);
@@ -251,6 +252,7 @@ static void service_resolver_callback(
 }
 
 static ServiceInfo *add_service(Config *c, AvahiIfIndex interface, AvahiProtocol protocol, const char *name, const char *type, const char *domain) {
+	printf("Add service\n");
     ServiceInfo *i;
 
     i = avahi_new(ServiceInfo, 1);
@@ -279,6 +281,7 @@ static ServiceInfo *add_service(Config *c, AvahiIfIndex interface, AvahiProtocol
 }
 
 static void remove_service(Config *c, ServiceInfo *i) {
+	printf("Remove Service\n");
     assert(c);
     assert(i);
 
@@ -303,7 +306,7 @@ static void service_browser_callback(
     const char *domain,
     AvahiLookupResultFlags flags,
     void *userdata) {
-
+	printf("Service browse callback\n");
     Config *c = userdata;
 
     assert(b);
@@ -311,6 +314,7 @@ static void service_browser_callback(
 
     switch (event) {
         case AVAHI_BROWSER_NEW: {
+        	//printf("browser new\n");
             if (c->ignore_local && (flags & AVAHI_LOOKUP_RESULT_LOCAL))
                 break;
 
@@ -325,6 +329,7 @@ static void service_browser_callback(
         }
 
         case AVAHI_BROWSER_REMOVE: {
+        	//printf("browser remove\n");
             ServiceInfo *info;
 
             if (!(info = find_service(interface, protocol, name, type, domain)))
@@ -337,16 +342,19 @@ static void service_browser_callback(
         }
 
         case AVAHI_BROWSER_FAILURE:
+        	//printf("browser failure\n");
             fprintf(stderr, _("service_browser failed: %s\n"), avahi_strerror(avahi_client_errno(client)));
             avahi_simple_poll_quit(simple_poll);
             break;
 
         case AVAHI_BROWSER_CACHE_EXHAUSTED:
+        	//printf("brower cache exhausted\n");
             n_cache_exhausted --;
             check_terminate(c);
             break;
 
         case AVAHI_BROWSER_ALL_FOR_NOW:
+        	//printf("browser all for now\n");
             n_all_for_now --;
             check_terminate(c);
             break;
@@ -354,6 +362,7 @@ static void service_browser_callback(
 }
 
 static void browse_service_type(Config *c, const char *stype, const char *domain) {
+	printf("browse service type\n");
     AvahiServiceBrowser *b;
     AvahiStringList *i;
 
@@ -394,6 +403,7 @@ static void service_type_browser_callback(
     const char *domain,
     AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
     void *userdata) {
+    printf("service type browse callback\n");
 
     Config *c = userdata;
 
@@ -428,6 +438,7 @@ static void service_type_browser_callback(
 }
 
 static void browse_all(Config *c) {
+	printf("brose all\n");
     AvahiServiceTypeBrowser *b;
 
     assert(c);
@@ -457,7 +468,7 @@ static void domain_browser_callback(
     const char *domain,
     AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
     void *userdata) {
-
+	printf("domain browser callback\n");
     Config *c = userdata;
 
     assert(b);
@@ -502,6 +513,7 @@ static void domain_browser_callback(
 }
 
 static void browse_domains(Config *c) {
+	printf("browse domains\n");
     AvahiDomainBrowser *b;
 
     assert(c);
@@ -568,6 +580,7 @@ static int start(Config *config) {
 }
 
 static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata) {
+	printf("client callback\n");
     Config *config = userdata;
 
     /* This function might be called when avahi_client_new() has not

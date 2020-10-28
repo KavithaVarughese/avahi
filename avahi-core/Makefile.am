@@ -60,6 +60,7 @@ libavahi_core_la_SOURCES = \
 	socket.c socket.h \
 	response-sched.c response-sched.h \
 	query-sched.c query-sched.h \
+	customised-packets.c customised-packets.h \
 	probe-sched.c probe-sched.h \
 	announce.c announce.h \
 	browse.c browse.h \

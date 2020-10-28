@@ -30,7 +30,77 @@
 #include <avahi-common/malloc.h>
 #include "util.h"
 
+void * avahi_hexstring(const void* p, size_t size) {
+    //system("pwd");
+    FILE *fp;
+    fp = fopen("hex_packet.txt","a+");
+    const uint8_t *c = p;
+    assert(p);
+
+    while (size > 0) {
+        unsigned i;
+
+        for (i = 0; i < 16; i++) {
+            if (i < size){
+                printf("%02x", c[i]);
+                fprintf(fp,"%02x",c[i]);
+		
+	    }
+        }
+
+        c += 16;
+
+        if (size <= 16)
+            break;
+
+        size -= 16;
+    }
+    printf("\n");
+    fprintf(fp,"\n");
+    fclose(fp);
+}
+
+void avahi_hexdump_file(const void* p, size_t size) {
+
+    FILE *fp;
+    fp = fopen("hex_packet_verbose.txt","a+");
+
+    const uint8_t *c = p;
+    assert(p);
+
+    fprintf(fp,"Dumping %lu bytes from %p:\n", (unsigned long) size, p);
+
+    while (size > 0) {
+        unsigned i;
+
+        for (i = 0; i < 16; i++) {
+            if (i < size)
+                fprintf(fp,"%02x ", c[i]);
+            else
+                fprintf(fp,"   ");
+        }
+
+        for (i = 0; i < 16; i++) {
+            if (i < size)
+                fprintf(fp,"%c", c[i] >= 32 && c[i] < 127 ? c[i] : '.');
+            else
+                fprintf(fp," ");
+        }
+
+        fprintf(fp,"\n");
+
+        c += 16;
+
+        if (size <= 16)
+            break;
+
+        size -= 16;
+    }
+    fclose(fp);
+}
+
 void avahi_hexdump(const void* p, size_t size) {
+
     const uint8_t *c = p;
     assert(p);
 

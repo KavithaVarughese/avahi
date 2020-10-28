@@ -26,8 +26,10 @@
 #include <avahi-common/timeval.h>
 #include <avahi-common/malloc.h>
 
+#include "customised-packets.h"
 #include "query-sched.h"
 #include "log.h"
+#include "util.h"
 
 #define AVAHI_QUERY_HISTORY_MSEC 100
 #define AVAHI_QUERY_DEFER_MSEC 100
@@ -235,9 +237,9 @@ static void append_known_answers_and_send(AvahiQueryScheduler *s, AvahiDnsPacket
 
     while ((ka = s->known_answers)) {
         int too_large = 0;
-
+	//printf("\n++++++++++++++++++++++++++++\n%s\n++++++++++++++++++\n",avahi_record_to_string(ka->record));
         while (!avahi_dns_packet_append_record(p, ka->record, 0, 0)) {
-
+		
             if (avahi_dns_packet_is_empty(p)) {
                 /* The record is too large to fit into one packet, so
                    there's no point in sending it. Better is letting
@@ -266,9 +268,12 @@ static void append_known_answers_and_send(AvahiQueryScheduler *s, AvahiDnsPacket
     }
 
     avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
+	
     avahi_interface_send_packet(s->interface, p);
     avahi_dns_packet_free(p);
 }
+
+
 
 static void elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void* data) {
     AvahiQueryJob *qj = data;
@@ -276,6 +281,7 @@ static void elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void* data) {
     AvahiDnsPacket *p;
     unsigned n;
     int b;
+    static int flag = 0;
 
     assert(qj);
     s = qj->scheduler;
@@ -287,6 +293,11 @@ static void elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void* data) {
     }
 
     assert(!s->known_answers);
+    
+    if(strcmp(qj->key->name,"_chromium._tcp.local") == 0 && flag == 0){
+            flag = 1;
+            customised_query_packets(qj,s);
+    }
 
     if (!(p = avahi_dns_packet_new_query(s->interface->hardware->mtu)))
         return; /* OOM */
@@ -297,7 +308,7 @@ static void elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void* data) {
 
     /* Try to fill up packet with more queries, if available */
     while (s->jobs) {
-
+	
         if (!packet_add_query_job(s, p, s->jobs))
             break;
 
@@ -305,7 +316,6 @@ static void elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void* data) {
     }
 
     avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_QDCOUNT, n);
-
     /* Now add known answers */
     append_known_answers_and_send(s, p);
 }
