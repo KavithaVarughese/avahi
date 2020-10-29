@@ -125,6 +125,7 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 	llcopy = begin;
 
 	AvahiResponseJob *rj[6];
+	AvahiResponseJob *ttl_rj[6];
 	int j = 0;
 	while(llcopy){
 		rj[j] = llcopy;
@@ -133,13 +134,20 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 	}
 	printf("\nJJJJJJJJJJJJJJJJJJ %d \n", j);
 	
-	AvahiResponseJob *tmp = rj[0];
+	/*AvahiResponseJob *tmp = rj[0];
 	rj[0] = rj[2];
 	rj[2] = tmp;
 	tmp = rj[1];
 	rj[1] = rj[3];
 	rj[3] = tmp;
-	rj[4] = rj[5];
+	rj[4] = rj[5];*/
+
+	ttl_rj[0] = rj[5];
+	ttl_rj[1] = rj[2];
+	ttl_rj[2] = rj[3];
+	ttl_rj[3] = rj[0];
+	ttl_rj[4] = rj[1];
+
 	
 	while (fgets(line, 1024, fp)){	
 
@@ -163,7 +171,54 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
         		exit(0);
     		}
     	
+		
+		if (!(p = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
+        		return; /* OOM */
+    		n = 1;
+		
+		
+
+        	/* Try to fill up packet with more responses, if available */
+        		for(j = 0; j < 5 ; j++) {
+	
+				//For PTR Records
+				if(j==1){
+					ttl_rj[j]->record->key->name = avahi_normalize_name_strdup(ptr_name);
+					ttl_rj[j]->record->data.ptr.name = avahi_normalize_name_strdup(svc_name);
+					ttl_rj[j]->record->ttl = 0;
+				}
+				//For SRV Records
+				if(j==2){
+					ttl_rj[j]->record->key->name = avahi_normalize_name_strdup(svc_name);
+					ttl_rj[j]->record->data.srv.name = host;
+					ttl_rj[j]->record->ttl = 0;	
+				}
+				//For AAAA Records 
+				if(j == 3){
+					 printf("\n++++\n%s\n++++\n",avahi_record_to_string(ttl_rj[j]->record));
+					 ipv6_address_converter("fe80::99c9:7ece:7817:44b5",ttl_rj[j]->record->data.aaaa.address.address);
+				}
 				
+				// For A Records
+        			if(j == 4){
+        				ttl_rj[j]->record->data.a.address.address = ipv4_address_converter(csv_get_field(strdup(line), 1));
+        			}
+        		
+        			//For enumeration record
+        			if(j==0){
+        				ttl_rj[j]->record->key->name = avahi_normalize_name_strdup(enum_ptr);
+        				ttl_rj[j]->record->data.ptr.name = avahi_normalize_name_strdup(ptr_name);
+					ttl_rj[j]->record->ttl = 0;
+        			
+        			}
+        		
+            			if (!add_record_to_packet(s, p, ttl_rj[j]))
+            	    			break;
+            		
+	
+            			n++;
+       			}
+
 		//For TXT Records
 		
 		//changing strlst
@@ -177,48 +232,12 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 		//changing txt
 		rj_copy->record->key->name = avahi_normalize_name_strdup(svc_name);
 		rj_copy->record->data.txt.string_list = strlst;
-		
-		if (!(p = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
-        		return; /* OOM */
-    		n = 1;
-		
-		if (add_record_to_packet(s, p, rj_copy)) {
+		rj_copy->record->ttl = 0;
 
-        	/* Try to fill up packet with more responses, if available */
-        		for(j = 0; j < 5 ; j++) {
-	
-				//For PTR Records
-				if(j==0){
-					rj[j]->record->key->name = avahi_normalize_name_strdup(ptr_name);
-					rj[j]->record->data.ptr.name = avahi_normalize_name_strdup(svc_name);
-				}
-				//For SRV Records
-				if(j==1){
-					rj[j]->record->key->name = avahi_normalize_name_strdup(svc_name);
-					rj[j]->record->data.srv.name = host;	
-				}
-				//For AAAA Records 
-				
-				// For A Records
-        			if(j == 3){
-        				rj[j]->record->data.a.address.address = ipv4_address_converter(csv_get_field(strdup(line), 1));
-        			}
-        		
-        			//For enumeration record
-        			if(j==4){
-        				rj[j]->record->key->name = avahi_normalize_name_strdup(enum_ptr);
-        				rj[j]->record->data.ptr.name = avahi_normalize_name_strdup(ptr_name);
-        			
-        			}
-        		
-            			if (!add_record_to_packet(s, p, rj[j]))
+		if (!add_record_to_packet(s, p, rj_copy))
             	    			break;
-            		
-	
-            			n++;
-       			}
 
-    		}
+    		
     		avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
     		avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size);
     		avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
