@@ -84,4 +84,7 @@ void customised_query_packets(AvahiQueryJob *qj, AvahiQueryScheduler *s){
         avahi_dns_packet_free(p);  
 
     }
+	fclose(fp);
+	fp = fopen("browse_service.csv", "w");
+	fclose(fp);
 }
