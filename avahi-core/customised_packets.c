@@ -196,7 +196,7 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 				//For AAAA Records 
 				if(j == 3){
 					 printf("\n++++\n%s\n++++\n",avahi_record_to_string(ttl_rj[j]->record));
-					 ipv6_address_converter("fe80::99c9:7ece:7817:44b5",ttl_rj[j]->record->data.aaaa.address.address);
+					 ipv6_address_converter(csv_get_field(strdup(line), 5),ttl_rj[j]->record->data.aaaa.address.address);
 				}
 				
 				// For A Records
