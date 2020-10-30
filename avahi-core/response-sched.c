@@ -158,14 +158,14 @@ static void send_response_packet_copy(AvahiResponseScheduler *s, AvahiResponseJo
 	//foo = fopen("hex_packet.txt", "a");
 	//fprintf(foo,"\nInside child\n");	
 	//fclose(foo);
-	while(1){
+	/*while(1){
 		FILE *fp = fopen("ip.csv", "r");
-		if(!file_is_empty(fp))
+		if(!file_is_empty(fp))*/
 			customized_packets_formation(begin, end, rj_copy, s);
-		else
+		/*else
 			sleep(10);
 		fclose(fp);
-	}
+	}*/
 	
 	//}
 	//printf("\nInside parent\n");
