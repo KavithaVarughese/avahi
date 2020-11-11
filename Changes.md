@@ -3,19 +3,27 @@
 Ubuntu 18.04 or more
 
 <strong> Dependencies Installed </strong> <br>
-`sudo apt-get install libtool automake expat libgdbm-dev libdaemon-dev gtk+2.0 doxygen xmltoman qt5-default`<br>
-`sudo apt-get install -y m4 glib2.0 dbus glade`<br>
-`sudo apt install pkg-config libevent-dev`<br>
+```
+sudo apt-get install libtool automake expat libgdbm-dev libdaemon-dev gtk+2.0 doxygen xmltoman qt5-default
+sudo apt-get install -y m4 glib2.0 dbus glade
+sudo apt install pkg-config libevent-dev
+```
 
 <strong> Additional Files Required in the root directory </strong> <br>
 1. /hex_packet_verbose.txt - hexdump of the mdns field of the generated packets <br>
-`sudo touch /hex_packet_verbose.txt && sudo chmod 777 /hex_packet_verbose.txt` <br>
+```
+sudo touch /hex_packet_verbose.txt && sudo chmod 777 /hex_packet_verbose.txt
+```
 Note: Is never automatically emptied <br>
 2. /hex_packet.txt - hex string of the mdns field of the generated packets in new lines <br>
-`sudo touch /hex_packet.txt && sudo chmod 777 /hex_packet.txt` <br>
+```
+sudo touch /hex_packet.txt && sudo chmod 777 /hex_packet.txt
+```
 Note: Is never automatically emptied <br>
 3. /ip.csv - file containing semi colon seperated values for each customised packets in new lines <br>
-`sudo touch /ip.csv && sudo chmod 777 /ip.csv` <br>
+```
+sudo touch /ip.csv && sudo chmod 777 /ip.csv
+```
 A sample file is present in the repository <br>
 Note: The file is emptied regularly when the customised packets for the respective rows are created.
 
@@ -37,10 +45,14 @@ sudo adduser --system --no-create-home --ingroup avahi avahi
 
 <hr>
 
-<h2> Run </h2> <br>
-`sudo ./start.sh` <br>
+## Run
+```
+sudo ./start.sh
+```
 or <br>
-`sudo bash start.sh` <br>
+```
+sudo bash start.sh
+```
 
 <h2> Changes </h2>
 
