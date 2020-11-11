@@ -61,13 +61,15 @@ void * avahi_hexstring(const void* p, size_t size) {
 }
 
 void avahi_hexdump_file(const void* p, size_t size) {
-
+	
+	printf("\nSIZE >>>>>>>>>>>>>>>>>>>>>>>>> %d\n", size);
+	
     FILE *fp;
     fp = fopen("hex_packet_verbose.txt","a+");
 
     const uint8_t *c = p;
     assert(p);
-
+	printf("\nVAL >>>>>>>>>>>>>>>>>>>>>>>>> %s\n", p);
     fprintf(fp,"Dumping %lu bytes from %p:\n", (unsigned long) size, p);
 
     while (size > 0) {

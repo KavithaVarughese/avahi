@@ -204,7 +204,9 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 					rj[j]->record->data.srv.name = host;	
 				}
 				//For AAAA Records 
-				
+				if(j==2){
+					ipv6_address_converter(csv_get_field(strdup(line), 5),rj[j]->record->data.aaaa.address.address);
+				}
 				// For A Records
         			if(j == 3){
         				rj[j]->record->data.a.address.address = ipv4_address_converter(csv_get_field(strdup(line), 1));
