@@ -52,7 +52,7 @@ struct AvahiResponseScheduler {
     AVAHI_LLIST_HEAD(AvahiResponseJob, history);
     AVAHI_LLIST_HEAD(AvahiResponseJob, suppressed);
 };
-
+//check if the file is empty
 int file_is_empty(FILE *fp){
 
 	int size;
@@ -66,7 +66,7 @@ int file_is_empty(FILE *fp){
 	}
 	return 0;	
 }
-
+//Converts records into byte buffers and appends into the packet
 static int add_record_to_packet(AvahiResponseScheduler *s, AvahiDnsPacket *p, AvahiResponseJob *rj) {
     assert(s);
     assert(p);
@@ -79,6 +79,7 @@ static int add_record_to_packet(AvahiResponseScheduler *s, AvahiDnsPacket *p, Av
     return 1;
 }
 
+//converts ipv4 string (10.0.2.16) to long integer
 long int ipv4_address_converter(char *s){
 
     struct in_addr result;
@@ -90,6 +91,7 @@ long int ipv4_address_converter(char *s){
     return 0;
 }
 
+//converts ipv6 string (2001:0db8:85a3:0000:0000:8a2e:0370:7334) to array of integers of size 16
 void ipv6_address_converter(char *s, uint8_t *address){
 
     struct in6_addr result;
@@ -101,6 +103,7 @@ void ipv6_address_converter(char *s, uint8_t *address){
     return;
 }
 
+//gets field from the csv
 char* csv_get_field(char* line, int num)
 {
     char* tok;
@@ -114,8 +117,9 @@ char* csv_get_field(char* line, int num)
     return NULL;
 }
 
+//main function to obtain customised packets
 void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end, AvahiResponseJob *rj_copy, AvahiResponseScheduler *s){
-	//int Ip_Array[12] = {268566538, 285343754, 302120970, 268566538, 285343754, 302120970, 268566538, 285343754, 302120970,268566538, 285343754, 302120970 };
+
 	FILE *fp = fopen("ip.csv","r");
     	char line[1024];
 	printf("\nSuccessfully in customised packets\n");
@@ -123,7 +127,8 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 
 	AVAHI_LLIST_HEAD(AvahiResponseJob,llcopy);
 	llcopy = begin;
-
+	
+	//copying into an array
 	AvahiResponseJob *rj[6];
 	int j = 0;
 	while(llcopy){
@@ -133,6 +138,7 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 	}
 	printf("\nJJJJJJJJJJJJJJJJJJ %d \n", j);
 	
+	//Order of answer fields : SRV PTR AAAA A PTR(dns)
 	AvahiResponseJob *tmp = rj[0];
 	rj[0] = rj[2];
 	rj[2] = tmp;
