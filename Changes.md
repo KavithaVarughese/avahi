@@ -42,10 +42,10 @@ sudo bash start.sh <br>
 <h2> Changes </h2>
 
 <h3> New files added </h3>
-1. avahi-core/customised-packets.h
-2. avahi-core/customised-packets.c
-3. avahi-daemon/dbus-print-message.h
-4. avahi-daemon/dbus-print-message.c
+1. avahi-core/customised-packets.h<br>
+2. avahi-core/customised-packets.c<br>
+3. avahi-daemon/dbus-print-message.h<br>
+4. avahi-daemon/dbus-print-message.c<br>
 
 <h3> Relevent changes in files </h3>
 
@@ -64,5 +64,5 @@ sudo bash start.sh <br>
 6. avahi-daemon/Makefile.am
 - line 56
 7. avahi-daemon/dbus-print-message.c
-- Complete file : Can be used to print DbusMessage for logs
+- Complete file : Can be used to print DbusMessage for logs<br>
 All other changes are for logs
