@@ -30,6 +30,7 @@
 #include <avahi-common/malloc.h>
 #include "util.h"
 
+//Fills hex_packet.txt
 void * avahi_hexstring(const void* p, size_t size) {
     //system("pwd");
     FILE *fp;
@@ -60,6 +61,7 @@ void * avahi_hexstring(const void* p, size_t size) {
     fclose(fp);
 }
 
+//fills hex_packet_verbose.txt
 void avahi_hexdump_file(const void* p, size_t size) {
 	
 	printf("\nSIZE >>>>>>>>>>>>>>>>>>>>>>>>> %d\n", size);
