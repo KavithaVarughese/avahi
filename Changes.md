@@ -3,9 +3,9 @@
 Ubuntu 18.04 or more
 
 <strong> Dependencies Installed </strong> <br>
-    sudo apt-get install libtool automake expat libgdbm-dev libdaemon-dev gtk+2.0 doxygen xmltoman qt5-default
-    sudo apt-get install -y m4 glib2.0 dbus glade
-    sudo apt install pkg-config libevent-dev
+`sudo apt-get install libtool automake expat libgdbm-dev libdaemon-dev gtk+2.0 doxygen xmltoman qt5-default`
+`sudo apt-get install -y m4 glib2.0 dbus glade`
+`sudo apt install pkg-config libevent-dev`
 
 <strong> Additional Files Required in the root directory </strong> <br>
 1. /hex_packet_verbose.txt - hexdump of the mdns field of the generated packets <br>
