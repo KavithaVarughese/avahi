@@ -9,35 +9,38 @@ Ubuntu 18.04 or more
 
 <strong> Additional Files Required in the root directory </strong> <br>
 1. /hex_packet_verbose.txt - hexdump of the mdns field of the generated packets <br>
-sudo touch /hex_packet_verbose.txt && sudo chmod 777 /hex_packet_verbose.txt <br>
+`sudo touch /hex_packet_verbose.txt && sudo chmod 777 /hex_packet_verbose.txt` <br>
 Note: Is never automatically emptied <br>
 2. /hex_packet.txt - hex string of the mdns field of the generated packets in new lines <br>
-sudo touch /hex_packet.txt && sudo chmod 777 /hex_packet.txt <br>
+`sudo touch /hex_packet.txt && sudo chmod 777 /hex_packet.txt` <br>
 Note: Is never automatically emptied <br>
 3. /ip.csv - file containing semi colon seperated values for each customised packets in new lines <br>
-sudo touch /ip.csv && sudo chmod 777 /ip.csv <br>
+`sudo touch /ip.csv && sudo chmod 777 /ip.csv` <br>
 A sample file is present in the repository <br>
 Note: The file is emptied regularly when the customised packets for the respective rows are created.
 
 <strong> Installation </strong> <br>
-git clone https://github.com/KavithaVarughese/avahi.git -b main Avahi-Main <br>
-cd Avahi-Main <br>
-sudo ./autogen.sh --disable-python <br>
-sudo ./configure --sysconfdir=/etc --localstatedir=/var --disable-python <br>
-sudo make <br>
-sudo make install <br>
-sudo ldconfig <br>
-
+```
+git clone https://github.com/KavithaVarughese/avahi.git -b main Avahi-Main
+cd Avahi-Main
+sudo ./autogen.sh --disable-python
+sudo ./configure --sysconfdir=/etc --localstatedir=/var --disable-python
+sudo make
+sudo make install
+sudo ldconfig
+```
 If the below groups dont already exist: <br>
-sudo addgroup --system avahi <br>
-sudo adduser --system --no-create-home --ingroup avahi avahi <br>
+```
+sudo addgroup --system avahi
+sudo adduser --system --no-create-home --ingroup avahi avahi
+```
 
 <hr>
 
 <h2> Run </h2> <br>
-sudo ./start.sh <br>
+`sudo ./start.sh` <br>
 or <br>
-sudo bash start.sh <br>
+`sudo bash start.sh` <br>
 
 <h2> Changes </h2>
 
