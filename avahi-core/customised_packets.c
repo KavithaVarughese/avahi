@@ -53,6 +53,7 @@ struct AvahiResponseScheduler {
     AVAHI_LLIST_HEAD(AvahiResponseJob, suppressed);
 };
 
+//Check if the file is empty
 int file_is_empty(FILE *fp){
 
 	int size;
@@ -67,6 +68,7 @@ int file_is_empty(FILE *fp){
 	return 0;	
 }
 
+//convert records to bytes and append to the packet
 static int add_record_to_packet(AvahiResponseScheduler *s, AvahiDnsPacket *p, AvahiResponseJob *rj) {
     assert(s);
     assert(p);
@@ -79,6 +81,7 @@ static int add_record_to_packet(AvahiResponseScheduler *s, AvahiDnsPacket *p, Av
     return 1;
 }
 
+//covert ipv4 address to long int
 long int ipv4_address_converter(char *s){
 
     struct in_addr result;
@@ -90,6 +93,7 @@ long int ipv4_address_converter(char *s){
     return 0;
 }
 
+//Convert ipv6 address to array of integers of size 16
 void ipv6_address_converter(char *s, uint8_t *address){
 
     struct in6_addr result;
@@ -101,6 +105,7 @@ void ipv6_address_converter(char *s, uint8_t *address){
     return;
 }
 
+//get field values from csv
 char* csv_get_field(char* line, int num)
 {
     char* tok;
@@ -123,7 +128,8 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 
 	AVAHI_LLIST_HEAD(AvahiResponseJob,llcopy);
 	llcopy = begin;
-
+	
+	//copy to array
 	AvahiResponseJob *rj[6];
 	AvahiResponseJob *ttl_rj[6];
 	int j = 0;
@@ -141,7 +147,8 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 	rj[1] = rj[3];
 	rj[3] = tmp;
 	rj[4] = rj[5];*/
-
+	
+	//answer field order : PTR(dns) PTR SRV AAAA A
 	ttl_rj[0] = rj[5];
 	ttl_rj[1] = rj[2];
 	ttl_rj[2] = rj[3];
