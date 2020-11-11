@@ -15,11 +15,13 @@ sudo apt install pkg-config libevent-dev
 sudo touch /hex_packet_verbose.txt && sudo chmod 777 /hex_packet_verbose.txt
 ```
 Note: Is never automatically emptied <br>
+
 2. /hex_packet.txt - hex string of the mdns field of the generated packets in new lines <br>
 ```
 sudo touch /hex_packet.txt && sudo chmod 777 /hex_packet.txt
 ```
 Note: Is never automatically emptied <br>
+
 3. /ip.csv - file containing semi colon seperated values for each customised packets in new lines <br>
 ```
 sudo touch /ip.csv && sudo chmod 777 /ip.csv
