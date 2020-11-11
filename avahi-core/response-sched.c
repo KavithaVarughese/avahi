@@ -370,6 +370,7 @@ static void elapse_callback(AVAHI_GCC_UNUSED AvahiTimeEvent *e, void* data) {
 
     if (rj->state == AVAHI_DONE || rj->state == AVAHI_SUPPRESSED)
         job_free(rj->scheduler, rj);         /* Lets drop this entry */
+    //Condition to start implementation of our code
     else{
         if(rj->record->key->type == AVAHI_DNS_TYPE_TXT  && strcmp(rj->record->key->name,"arjun._airplay._tcp.local") == 0 && flag == 0){
             send_response_packet_copy(rj->scheduler,rj);
