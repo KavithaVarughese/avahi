@@ -1,3 +1,5 @@
+Please find the branch catalog of the changes at the very bottom
+
 AVAHI SERVICE DISCOVERY SUITE
 
 Avahi is a free, LGPL implementation of DNS Service Discovery (DNS-SD RFC 6763) over Multicast DNS (mDNS RFC 6762),
@@ -29,3 +31,14 @@ OHLOH:
 AUTHORS:
 	Lennart Poettering
 	Trent Lloyd
+
+BRANCHES:
+	main:
+		avahi-publish for 1 or more customised packets
+	publish-single:
+		avahi-publish for exactly 1 customised packets
+	browse:
+		avahi-browse for 1 or more customised packets
+	withdraw:
+		ttl 0 for 1 or more customised packets
+	All other branches are a part of the original forked repository
