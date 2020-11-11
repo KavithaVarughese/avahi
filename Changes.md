@@ -34,6 +34,11 @@ sudo adduser --system --no-create-home --ingroup avahi avahi <br>
 
 <hr>
 
+<h2> Run </h2> <br>
+sudo ./start.sh <br>
+or <br>
+sudo bash start.sh <br>
+
 <h2> Changes </h2>
 
 <h3> New files added </h3>
