@@ -1,0 +1,7 @@
+10.0.2.15;kavitha;_airplay._tcp;kavitha-txt;fe80::99c9:7ece:7817:44b5
+10.0.2.16;keshav;_chromecast._tcp;keshav-txt;fe80::99c9:7ece:7817:44b6
+10.0.2.17;arjun;_cust1._tcp;arjun-txt;fe80::99c9:7ece:7817:44b7
+10.0.2.18;sujay;_netflix._tcp;sujay-txt;fe80::99c9:7ece:7817:44b8
+10.0.2.19;avahi;_firestick._tcp;avahi-txt;fe80::99c9:7ece:7817:44b9
+10.0.2.20;WAB;_alexa._tcp;WAB-txt;fe80::99c9:7ece:7817:44ba
+10.0.2.21;TGen;_fredboat._tcp;TGen-txt;fe80::99c9:7ece:7817:44bb
