@@ -33,6 +33,8 @@
 void * avahi_hexstring(const void* p, size_t size) {
     //system("pwd");
     FILE *fp;
+    FILE *withdraw;
+    withdraw = fopen("withdraw.csv", "a+");
     fp = fopen("hex_packet.txt","a+");
     const uint8_t *c = p;
     assert(p);
@@ -44,6 +46,7 @@ void * avahi_hexstring(const void* p, size_t size) {
             if (i < size){
                 printf("%02x", c[i]);
                 fprintf(fp,"%02x",c[i]);
+                fprintf(withdraw,"%02x",c[i]);
 		
 	    }
         }
@@ -57,6 +60,8 @@ void * avahi_hexstring(const void* p, size_t size) {
     }
     printf("\n");
     fprintf(fp,"\n");
+    fprintf(withdraw, ";\n");
+    fclose(withdraw);
     fclose(fp);
 }
 

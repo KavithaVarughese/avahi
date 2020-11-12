@@ -122,6 +122,7 @@ char* csv_get_field(char* line, int num)
 void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end, AvahiResponseJob *rj_copy, AvahiResponseScheduler *s){
 	//int Ip_Array[12] = {268566538, 285343754, 302120970, 268566538, 285343754, 302120970, 268566538, 285343754, 302120970,268566538, 285343754, 302120970 };
 	FILE *fp = fopen("ip.csv","r");
+	FILE *with;
     	char line[1024];
 	printf("\nSuccessfully in customised packets\n");
 
@@ -244,6 +245,11 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 		if (!add_record_to_packet(s, p, rj_copy))
             	    			break;
 
+    		
+    		//writing to withdraw.csv
+    		with = fopen("withdraw.csv", "a");
+    		fprintf(with, "%s;%s;", csv_get_field(strdup(line), 1), csv_get_field(strdup(line), 6));
+    		fclose(with);
     		
     		avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
     		avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size);
