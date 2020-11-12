@@ -121,6 +121,7 @@ char* csv_get_field(char* line, int num)
 void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end, AvahiResponseJob *rj_copy, AvahiResponseScheduler *s){
 
 	FILE *fp = fopen("ip.csv","r");
+	FILE *ann;
     	char line[1024];
 	printf("\nSuccessfully in customised packets\n");
 
@@ -227,6 +228,12 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
        			}
 
     		}
+    		
+    		//writing to announce.csv
+    		ann = fopen("announce.csv", "a");
+    		fprintf(ann, "%s;%s;", csv_get_field(strdup(line), 1), csv_get_field(strdup(line), 6));
+    		fclose(ann);
+    		
     		avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
     		avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size);
     		avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
