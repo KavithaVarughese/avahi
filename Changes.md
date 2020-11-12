@@ -39,7 +39,7 @@ sudo make
 sudo make install
 sudo ldconfig
 ```
-If the below groups dont already exist: <br>
+If the below groups don't already exist: <br>
 ```
 sudo addgroup --system avahi
 sudo adduser --system --no-create-home --ingroup avahi avahi
