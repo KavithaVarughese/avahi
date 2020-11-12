@@ -56,6 +56,8 @@ or <br>
 sudo bash start.sh
 ```
 
+<hr>
+
 ## Changes
 
 ### New files added
