@@ -248,7 +248,7 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
     		
     		//writing to withdraw.csv
     		with = fopen("withdraw.csv", "a");
-    		fprintf(with, "%s;%s;", csv_get_field(strdup(line), 1), csv_get_field(strdup(line), 6));
+    		fprintf(with, "%s;%s;%s;%s;%s;%s;", csv_get_field(strdup(line), 1), csv_get_field(strdup(line), 2), csv_get_field(strdup(line), 3), csv_get_field(strdup(line), 4), csv_get_field(strdup(line), 5), csv_get_field(strdup(line), 6));
     		fclose(with);
     		
     		avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
