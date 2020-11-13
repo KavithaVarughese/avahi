@@ -29,7 +29,7 @@ sudo touch /ip.csv && sudo chmod 777 /ip.csv
 A sample file is present in the repository <br>
 *Note: The file is emptied regularly when the customised packets for the respective rows are created.*
 
-4. /announce.csv - csv having fields ipv4_address, mac_address, hexstring <br>
+4. /announce.csv - csv having fields of ip.csv + hexstring <br>
 ```
 sudo touch /announce.csv && sudo chmod 777 /announce.csv
 ```
