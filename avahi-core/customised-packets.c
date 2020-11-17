@@ -1,11 +1,25 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <stdlib.h>
 #include <stdio.h> 
-#include <string.h>
-#include "customised-packets.h"
-#include "query-sched.h"
-#include "log.h"
 
+#include <string.h>
+#include <sys/types.h> 
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <avahi-common/timeval.h>
+#include <avahi-common/malloc.h>
+#include <avahi-common/domain.h>
+#include <avahi-common/strlst.h>
+
+#include "customised-packets.h"
+#include "log.h"
+#include "rr-util.h"
 
 
 struct AvahiQueryJob {
@@ -57,18 +71,17 @@ char* csv_get_field(char* line, int num)
 
 void customised_query_packets(AvahiQueryJob *qj, AvahiQueryScheduler *s){
 	
-	FILE *fp = fopen("browse_service.csv","r");
+	FILE *fp = fopen("browse_service.csv","r"), *brw;
     char line[1024];
 
     AvahiDnsPacket *p;
     unsigned n;
     
 
-    while (fgets(line, 1024, fp)){	
-    	char *tmp = line;
-        char *name = csv_get_field(tmp,1);
+    while (fgets(line, 1024, fp)){
+        char *name = csv_get_field(strdup(line),1);
         char*domain = ".local";
-        qj->key->name = strcat(line, domain);
+        qj->key->name = strcat(name, domain);
 		//qj->key->name = line;
         if (!(p = avahi_dns_packet_new_query(s->interface->hardware->mtu)))
             return; /* OOM */
@@ -77,6 +90,10 @@ void customised_query_packets(AvahiQueryJob *qj, AvahiQueryScheduler *s){
             return 0;
 
         n = 1;
+        
+        brw = fopen("browse.csv", "a");
+        fprintf(brw, "%s;%s;",  name, csv_get_field(strdup(line), 2));
+        fclose(brw);
 
         avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_QDCOUNT, n);
         avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size);
