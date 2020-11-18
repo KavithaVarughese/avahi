@@ -81,7 +81,7 @@ sudo bash start.sh
 - Complete file
 4. avahi-core/util.c
 - lines 33 to 104
-5 avahi-core/response-sched.c
+5. avahi-core/response-sched.c
 - lines 91 to 174
 --Note : Commented lines 154 to 170 is for infinite loop within the program, else start.sh consists of the infinite loop
 - lines 373 to 379 
