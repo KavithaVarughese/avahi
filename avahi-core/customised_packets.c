@@ -140,282 +140,282 @@ void ipv6_address_converter(char *s, uint8_t *address){
 //main function to obtain customised packets
 void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end, AvahiResponseJob *rj_copy, AvahiResponseScheduler *s){
 
-	FILE *csv_writer;
-	printf("\nSuccessfully in customised packets\n");
-	
-	FILE *tempfp = fopen("log.txt", "w");
-	fprintf(tempfp, "inside customised packets formation\n");
-	fclose(tempfp);
-	
+    FILE *csv_writer;
+    printf("\nSuccessfully in customised packets\n");
+    
+    FILE *tempfp = fopen("log.txt", "w");
+    fprintf(tempfp, "inside customised packets formation\n");
+    fclose(tempfp);
+    
 
 
-	AVAHI_LLIST_HEAD(AvahiResponseJob,llcopy);
-	llcopy = begin;
-	
-	//copying into an array
-	AvahiResponseJob *rj[6];
-	int j = 0;
-	while(llcopy) {
-		rj[j] = llcopy;
-		j++;
-		llcopy = llcopy->jobs_next;
-	}
-	
-	//Getting mysql connection and trying to execute a statemtnt
-	//mysql objects
+    AVAHI_LLIST_HEAD(AvahiResponseJob,llcopy);
+    llcopy = begin;
+    
+    //copying into an array
+    AvahiResponseJob *rj[6];
+    int j = 0;
+    while(llcopy) {
+        rj[j] = llcopy;
+        j++;
+        llcopy = llcopy->jobs_next;
+    }
+    
+    //Getting mysql connection and trying to execute a statemtnt
+    //mysql objects
 
-	MYSQL *conn;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+    MYSQL *conn;
+    MYSQL_RES *res;
+    MYSQL_ROW row;
 
-	//mysql server and database definitions
-	char *server = "localhost";
-	char *user = "root";
-	char *password = "Covid@2020";
-	char *database = "agent_simul";
+    //mysql server and database definitions
+    char *server = "localhost";
+    char *user = "root";
+    char *password = "Covid@2020";
+    char *database = "agent_simul";
 
-	conn = mysql_init(NULL);
+    conn = mysql_init(NULL);
 
-	/* Connect to database */
-	if (!mysql_real_connect(conn, server, user, password, database, 0, NULL, 0)){
-		printf("Failed to connect to the MYSQL database\n");
-	}
+    /* Connect to database */
+    if (!mysql_real_connect(conn, server, user, password, database, 0, NULL, 0)){
+        printf("Failed to connect to the MYSQL database\n");
+    }
 
-	res = mysql_use_result(conn);
-	/* Execute SQL query to fetch all table names.*/
-	if (mysql_query(conn, "show tables"))
-	{
-		printf(("Failed to execute MYSQL quesry. Error: %s\n", mysql_error(conn)));
-	}
-	
-	res = mysql_use_result(conn);
-	
-	/* Output table name */
-	printf("MYSQL Tables in mydb database:\n");
-	while ((row = mysql_fetch_row(res)) != NULL){
-		printf("%s \n", row[0]);
-	}
-	
-	
-	// free results
-	mysql_free_result(res);
-	
-	//Send SQL Query
-	if (mysql_query(conn, "select * from ip")){
-		printf("Failed to execute quesry. Error: %s\n", mysql_error(conn));
-	}
-	res = mysql_store_result(conn);
-	
-	int columns = mysql_num_fields(res);
-	
-	int i = 0;
-	
-	printf("Entries in the table my_table:\n");
-	while(row = mysql_fetch_row(res))
-	{
-		AvahiDnsPacket *p;
-   		unsigned n;		
-		char *name = row[1];
-		char *type = row[2];
-		char *domain = "local"; //always
-		char *host = "snoopsxox-VirtualBot.local"; // Also taken from CSV I believe
-		char *txt_name = row[3];
-		char *macadd = row[5];
-		char ptr_name[AVAHI_DOMAIN_NAME_MAX], svc_name[AVAHI_DOMAIN_NAME_MAX], enum_ptr[AVAHI_DOMAIN_NAME_MAX];
-		int mode = (strcmp("announce", row[6]) == 0) ? 1 : 0;
-		//Formation of the required names
-		int ret;
-		if ((ret = avahi_service_name_join(svc_name, sizeof(svc_name), name, type, domain)) < 0 ||
-        	(ret = avahi_service_name_join(ptr_name, sizeof(ptr_name), NULL, type, domain)) < 0 ||
-        	(ret = avahi_service_name_join(enum_ptr, sizeof(enum_ptr), NULL, "_services._dns-sd._udp", domain)) < 0) {
-        	exit(0);
-    	}
-		//For TXT Records
-		//changing strlst
-		AvahiStringList *strlst = NULL;
-    	strlst = avahi_string_list_add(strlst,txt_name);
-		
-		while(rj_copy->record->data.txt.string_list) {
-			rj_copy->record->data.txt.string_list = rj_copy->record->data.txt.string_list->next;
-		}
-		//changing txt
-		rj_copy->record->key->name = avahi_normalize_name_strdup(svc_name);
-		rj_copy->record->data.txt.string_list = strlst;
-		
-		if (!(p = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
-        		return; /* OOM */
-    	
-    	n = 1;
+    res = mysql_use_result(conn);
+    /* Execute SQL query to fetch all table names.*/
+    if (mysql_query(conn, "show tables"))
+    {
+        printf(("Failed to execute MYSQL quesry. Error: %s\n", mysql_error(conn)));
+    }
+    
+    res = mysql_use_result(conn);
+    
+    /* Output table name */
+    printf("MYSQL Tables in mydb database:\n");
+    while ((row = mysql_fetch_row(res)) != NULL){
+        printf("%s \n", row[0]);
+    }
+    
+    
+    // free results
+    mysql_free_result(res);
+    
+    //Send SQL Query
+    if (mysql_query(conn, "select * from ip")){
+        printf("Failed to execute quesry. Error: %s\n", mysql_error(conn));
+    }
+    res = mysql_store_result(conn);
+    
+    int columns = mysql_num_fields(res);
+    
+    int i = 0;
+    
+    printf("Entries in the table my_table:\n");
+    while(row = mysql_fetch_row(res))
+    {
+        AvahiDnsPacket *p;
+           unsigned n;		
+        char *name = row[1];
+        char *type = row[2];
+        char *domain = "local"; //always
+        char *host = "snoopsxox-VirtualBot.local"; // Also taken from CSV I believe
+        char *txt_name = row[3];
+        char *macadd = row[5];
+        char ptr_name[AVAHI_DOMAIN_NAME_MAX], svc_name[AVAHI_DOMAIN_NAME_MAX], enum_ptr[AVAHI_DOMAIN_NAME_MAX];
+        int mode = (strcmp("announce", row[6]) == 0) ? 1 : 0;
+        //Formation of the required names
+        int ret;
+        if ((ret = avahi_service_name_join(svc_name, sizeof(svc_name), name, type, domain)) < 0 ||
+            (ret = avahi_service_name_join(ptr_name, sizeof(ptr_name), NULL, type, domain)) < 0 ||
+            (ret = avahi_service_name_join(enum_ptr, sizeof(enum_ptr), NULL, "_services._dns-sd._udp", domain)) < 0) {
+            exit(0);
+        }
+        //For TXT Records
+        //changing strlst
+        AvahiStringList *strlst = NULL;
+        strlst = avahi_string_list_add(strlst,txt_name);
+        
+        while(rj_copy->record->data.txt.string_list) {
+            rj_copy->record->data.txt.string_list = rj_copy->record->data.txt.string_list->next;
+        }
+        //changing txt
+        rj_copy->record->key->name = avahi_normalize_name_strdup(svc_name);
+        rj_copy->record->data.txt.string_list = strlst;
+        
+        if (!(p = avahi_dns_packet_new_response(s->interface->hardware->mtu, 1)))
+                return; /* OOM */
+        
+        n = 1;
 
-		/* Try to fill up packet with more responses, if available */
-    	
-    	//Original Record Order:
-		//AAAA    A    PTR    SRV    GARBAGE    PTR(DNS)
-		// 0      1     2      3        4          5
-
-
-		//For PTR Records
-		rj[2]->record->key->name = avahi_normalize_name_strdup(ptr_name);
-		rj[2]->record->data.ptr.name = avahi_normalize_name_strdup(svc_name);
-		if(mode == 0)
-			rj[2]->record->ttl = 0;
-			
-		//For SRV Records
-		rj[3]->record->key->name = avahi_normalize_name_strdup(svc_name);
-		rj[3]->record->data.srv.name = host;
-		if(mode == 0)
-			rj[3]->record->ttl = 0;
-
-		//For AAAA Records 
-		char *ipv6 = row[4];
-		ipv6_address_converter(ipv6, rj[0]->record->data.aaaa.address.address);
-
-		// For A Records
-		char *ipv4 = row[0];
-		rj[1]->record->data.a.address.address = ipv4_address_converter(ipv4);
-	
-		//For enumeration record
-		rj[5]->record->key->name = avahi_normalize_name_strdup(enum_ptr);
-		rj[5]->record->data.ptr.name = avahi_normalize_name_strdup(ptr_name);
-		if(mode == 0){
-			rj[5]->record->ttl = 0;
-		}
-		
-		
-    	tempfp = fopen("log.txt", "a");
-		fprintf(tempfp, "changed values\n");
-		fclose(tempfp);
-			
-		
-		//Original Record Order:
-		//AAAA    A    PTR    SRV    GARBAGE    PTR(DNS)
-		// 0      1     2      3        4          5
-		//Announce Packet Record Order:
-		//TXT    PTR    SRV     AAAA    A    PTR(DNS)
-		//Withdraw Packet Record Order:
-		//PTR(DNS)    PTR    SRV    AAAA    A    TXT
-		if(mode == 1) {
-			if(!add_record_to_packet(s, p, rj_copy))
-				break;
-			if (!add_record_to_packet(s, p, rj[2]))
-    	    	break;
-			if (!add_record_to_packet(s, p, rj[3]))
-    	    	break;
-			if (!add_record_to_packet(s, p, rj[0]))
-    	    	break;
-			if (!add_record_to_packet(s, p, rj[1]))
-    	    	break;
-			if (!add_record_to_packet(s, p, rj[5]))
-    	    	break;
-    	    tempfp = fopen("log.txt", "a");
-			fprintf(tempfp, "announce\n");
-			fclose(tempfp);
-		} else {
-			if (!add_record_to_packet(s, p, rj[5]))
-    	    	break;
-			if (!add_record_to_packet(s, p, rj[2]))
-    	    	break;
-			if (!add_record_to_packet(s, p, rj[3]))
-    	    	break;
-			if (!add_record_to_packet(s, p, rj[0]))
-    	    	break;
-			if (!add_record_to_packet(s, p, rj[1]))
-    	    	break;
-    	    rj_copy->record->ttl = 0;
-			if(!add_record_to_packet(s, p, rj_copy))
-				break;
-    	    tempfp = fopen("log.txt", "a");
-			fprintf(tempfp, "withdraw\n");
-			fclose(tempfp);
-		}
-    	
-    	//Number of records added	
-    	n+=5;
-		//writing to announce.csv/withdraw.csv
-		csv_writer = (mode == 1) ? fopen("announce.csv", "a") : fopen("withdraw.csv", "a");
-		fprintf(csv_writer, "%s;%s;%s;%s;%s;%s;", ipv4, name, type, txt_name, ipv6, macadd);
-		fclose(csv_writer);
-		
-		avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
-		//mode = 1 -> announce, 0 -> ttl0
-		avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size, mode);
-		avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
-		avahi_dns_packet_free(p);
-    	//free(tmp);
+        /* Try to fill up packet with more responses, if available */
+        
+        //Original Record Order:
+        //AAAA    A    PTR    SRV    GARBAGE    PTR(DNS)
+        // 0      1     2      3        4          5
 
 
-	}
-	
-	//Closing the connection to sql and freeing the sql resultts
-	mysql_free_result(res);
-	mysql_close(conn);
+        //For PTR Records
+        rj[2]->record->key->name = avahi_normalize_name_strdup(ptr_name);
+        rj[2]->record->data.ptr.name = avahi_normalize_name_strdup(svc_name);
+        if(mode == 0)
+            rj[2]->record->ttl = 0;
+            
+        //For SRV Records
+        rj[3]->record->key->name = avahi_normalize_name_strdup(svc_name);
+        rj[3]->record->data.srv.name = host;
+        if(mode == 0)
+            rj[3]->record->ttl = 0;
+
+        //For AAAA Records 
+        char *ipv6 = row[4];
+        ipv6_address_converter(ipv6, rj[0]->record->data.aaaa.address.address);
+
+        // For A Records
+        char *ipv4 = row[0];
+        rj[1]->record->data.a.address.address = ipv4_address_converter(ipv4);
+    
+        //For enumeration record
+        rj[5]->record->key->name = avahi_normalize_name_strdup(enum_ptr);
+        rj[5]->record->data.ptr.name = avahi_normalize_name_strdup(ptr_name);
+        if(mode == 0){
+            rj[5]->record->ttl = 0;
+        }
+        
+        
+        tempfp = fopen("log.txt", "a");
+        fprintf(tempfp, "changed values\n");
+        fclose(tempfp);
+            
+        
+        //Original Record Order:
+        //AAAA    A    PTR    SRV    GARBAGE    PTR(DNS)
+        // 0      1     2      3        4          5
+        //Announce Packet Record Order:
+        //TXT    PTR    SRV     AAAA    A    PTR(DNS)
+        //Withdraw Packet Record Order:
+        //PTR(DNS)    PTR    SRV    AAAA    A    TXT
+        if(mode == 1) {
+            if(!add_record_to_packet(s, p, rj_copy))
+                break;
+            if (!add_record_to_packet(s, p, rj[2]))
+                break;
+            if (!add_record_to_packet(s, p, rj[3]))
+                break;
+            if (!add_record_to_packet(s, p, rj[0]))
+                break;
+            if (!add_record_to_packet(s, p, rj[1]))
+                break;
+            if (!add_record_to_packet(s, p, rj[5]))
+                break;
+            tempfp = fopen("log.txt", "a");
+            fprintf(tempfp, "announce\n");
+            fclose(tempfp);
+        } else {
+            if (!add_record_to_packet(s, p, rj[5]))
+                break;
+            if (!add_record_to_packet(s, p, rj[2]))
+                break;
+            if (!add_record_to_packet(s, p, rj[3]))
+                break;
+            if (!add_record_to_packet(s, p, rj[0]))
+                break;
+            if (!add_record_to_packet(s, p, rj[1]))
+                break;
+            rj_copy->record->ttl = 0;
+            if(!add_record_to_packet(s, p, rj_copy))
+                break;
+            tempfp = fopen("log.txt", "a");
+            fprintf(tempfp, "withdraw\n");
+            fclose(tempfp);
+        }
+        
+        //Number of records added	
+        n+=5;
+        //writing to announce.csv/withdraw.csv
+        csv_writer = (mode == 1) ? fopen("announce.csv", "a") : fopen("withdraw.csv", "a");
+        fprintf(csv_writer, "%s;%s;%s;%s;%s;%s;", ipv4, name, type, txt_name, ipv6, macadd);
+        fclose(csv_writer);
+        
+        avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
+        //mode = 1 -> announce, 0 -> ttl0
+        avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size, mode);
+        avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
+        avahi_dns_packet_free(p);
+        //free(tmp);
+
+
+    }
+    
+    //Closing the connection to sql and freeing the sql resultts
+    mysql_free_result(res);
+    mysql_close(conn);
 }
 
 
 void customised_query_packets(AvahiQueryJob *qj, AvahiQueryScheduler *s){
-	
-	FILE *brw;
+    
+    FILE *brw;
     AvahiDnsPacket *p;
     unsigned n;
 
 
-	MYSQL *conn;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+    MYSQL *conn;
+    MYSQL_RES *res;
+    MYSQL_ROW row;
 
-	char *server = "localhost";
-	char *user = "root";
-	char *password = "Covid@2020";
-	char *database = "agent_simul";
+    char *server = "localhost";
+    char *user = "root";
+    char *password = "Covid@2020";
+    char *database = "agent_simul";
 
-	conn = mysql_init(NULL);
+    conn = mysql_init(NULL);
 
-	/* Connect to database */
-	if (!mysql_real_connect(conn, server, user, password, database, 0, NULL, 0)){
-		printf("Failed to connect to the MYSQL database\n");
-	}
+    /* Connect to database */
+    if (!mysql_real_connect(conn, server, user, password, database, 0, NULL, 0)){
+        printf("Failed to connect to the MYSQL database\n");
+    }
 
-	res = mysql_use_result(conn);
-	/* Execute SQL query to fetch all table names.*/
-	if (mysql_query(conn, "show tables"))
-	{
-		printf(("Failed to execute MYSQL quesry. Error: %s\n", mysql_error(conn)));
-	}
-	
-	res = mysql_use_result(conn);
-	
-	/* Output table name */
-	
-	printf("MYSQL Tables in mydb database:\n");
-	while ((row = mysql_fetch_row(res)) != NULL){
-		
-		printf("%s \n", row[0]);
-	}
-	
-	
-	// free results
-	mysql_free_result(res);
-	
-	//Send SQL Query
-	if (mysql_query(conn, "select * from browse_service"))
-	{
-		printf("Failed to execute quesry. Error: %s\n", mysql_error(conn));
-	}
-	res = mysql_store_result(conn);
-	
-	int columns = mysql_num_fields(res);
-	
-	int i = 0;
-	
-	printf("Entries in the table my_table:\n");
-	while(row = mysql_fetch_row(res))
-	{
-		char *name = row[0];
-		char *domain = ".local";
-		char *mac = row[1];
-		qj->key->name = strcat(name, domain);
-		
-		if (!(p = avahi_dns_packet_new_query(s->interface->hardware->mtu)))
+    res = mysql_use_result(conn);
+    /* Execute SQL query to fetch all table names.*/
+    if (mysql_query(conn, "show tables"))
+    {
+        printf(("Failed to execute MYSQL quesry. Error: %s\n", mysql_error(conn)));
+    }
+    
+    res = mysql_use_result(conn);
+    
+    /* Output table name */
+    
+    printf("MYSQL Tables in mydb database:\n");
+    while ((row = mysql_fetch_row(res)) != NULL){
+        
+        printf("%s \n", row[0]);
+    }
+    
+    
+    // free results
+    mysql_free_result(res);
+    
+    //Send SQL Query
+    if (mysql_query(conn, "select * from browse_service"))
+    {
+        printf("Failed to execute quesry. Error: %s\n", mysql_error(conn));
+    }
+    res = mysql_store_result(conn);
+    
+    int columns = mysql_num_fields(res);
+    
+    int i = 0;
+    
+    printf("Entries in the table my_table:\n");
+    while(row = mysql_fetch_row(res))
+    {
+        char *name = row[0];
+        char *domain = ".local";
+        char *mac = row[1];
+        qj->key->name = strcat(name, domain);
+        
+        if (!(p = avahi_dns_packet_new_query(s->interface->hardware->mtu)))
             return; /* OOM */
 
         if (!avahi_dns_packet_append_key(p, qj->key, 0))
@@ -427,11 +427,11 @@ void customised_query_packets(AvahiQueryJob *qj, AvahiQueryScheduler *s){
         fprintf(brw, "%s;%s;",  name, mac);
         fclose(brw);
 
-		avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_QDCOUNT, n);
+        avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_QDCOUNT, n);
         avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size, 2);
         avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
         avahi_dns_packet_free(p);
 
-	}
-	
+    }
+    
 }
