@@ -137,26 +137,10 @@ void ipv6_address_converter(char *s, uint8_t *address){
     return;
 }
 
-//gets field from the csv
-char* csv_get_field(char* line, int num)
-{
-    char* tok;
-    for (tok = strtok(line, ";");
-            tok && *tok;
-            tok = strtok(NULL, ";\n"))
-    {
-        if (!--num)
-            return tok;
-    }
-    return NULL;
-}
-
 //main function to obtain customised packets
 void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end, AvahiResponseJob *rj_copy, AvahiResponseScheduler *s){
 
-	FILE *fp = fopen("ip.csv","r");
 	FILE *csv_writer;
-    char line[1024];
 	printf("\nSuccessfully in customised packets\n");
 	
 	FILE *tempfp = fopen("log.txt", "w");
@@ -177,7 +161,7 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 		llcopy = llcopy->jobs_next;
 	}
 	
-	//Getting mysql connection and trrying to execute a statemtnt
+	//Getting mysql connection and trying to execute a statemtnt
 	//mysql objects
 
 	MYSQL *conn;
@@ -194,36 +178,21 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 
 	/* Connect to database */
 	if (!mysql_real_connect(conn, server, user, password, database, 0, NULL, 0)){
-
-		//fprintf(tempfp,"Failed to connect to the database\n");
-		//FILE *tempfp = fopen("log.txt", "a");
-		//fprintf(tempfp,"Failed to connect to the database\n");
-		//fclose(tempfp);
 		printf("Failed to connect to the MYSQL database\n");
-
-		//return 0;
 	}
 
 	res = mysql_use_result(conn);
 	/* Execute SQL query to fetch all table names.*/
 	if (mysql_query(conn, "show tables"))
 	{
-		//FILE *tempfp = fopen("log.txt", "a");
-		//fprintf(tempfp, "Failed to execute quesry. Error: %s\n", mysql_error(conn));
-		//fclose(tempfp);
 		printf(("Failed to execute MYSQL quesry. Error: %s\n", mysql_error(conn)));
-		//return 0;
 	}
 	
 	res = mysql_use_result(conn);
 	
 	/* Output table name */
-	//fprintf(tempfp,"MySQL Tables in mydb database:\n");
 	printf("MYSQL Tables in mydb database:\n");
 	while ((row = mysql_fetch_row(res)) != NULL){
-		//FILE *tempfp = fopen("log.txt", "a");
-		//fprintf(tempfp, "%s \n", row[0]);
-		//fclose(tempfp);
 		printf("%s \n", row[0]);
 	}
 	
@@ -232,11 +201,8 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 	mysql_free_result(res);
 	
 	//Send SQL Query
-	if (mysql_query(conn, "select * from ip"))
-	{
+	if (mysql_query(conn, "select * from ip")){
 		printf("Failed to execute quesry. Error: %s\n", mysql_error(conn));
-		//printf(("%d", 1));
-		//return 0;
 	}
 	res = mysql_store_result(conn);
 	
@@ -247,42 +213,16 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 	printf("Entries in the table my_table:\n");
 	while(row = mysql_fetch_row(res))
 	{
-		for (i = 0; i < columns; i++)
-			{
-				printf("%s ", row[i] ? row[i] : "NULL");
-				//printf(("%d", 1));
-			}
-		printf(tempfp,"\n");
-	}
-	//sfclose(tempfp);
-	//mysql_free_result(res);
-	
-
-	//Closing the connection to sql and freeing the sql resultts
-	mysql_free_result(res);
-	mysql_close(conn);
-	
-	
-	//TRY SETTING FLAGS FOR CURRENT RECORD ORDER
-	
-	
-	
-	
-	while (fgets(line, 1024, fp)) {
-
 		AvahiDnsPacket *p;
-   		unsigned n;
-		//Related to CSV
-        	//char* tmp = strdup(line);
-		char *name = csv_get_field(strdup(line),2); // Get name of service from CSV
-		char *type = csv_get_field(strdup(line),3); //Get service type from CSV
+   		unsigned n;		
+		char *name = row[1];
+		char *type = row[2];
 		char *domain = "local"; //always
 		char *host = "snoopsxox-VirtualBot.local"; // Also taken from CSV I believe
-		char *txt_name = csv_get_field(strdup(line),4); //Hopefully from CSV
+		char *txt_name = row[3];
+		char *macadd = row[5];
 		char ptr_name[AVAHI_DOMAIN_NAME_MAX], svc_name[AVAHI_DOMAIN_NAME_MAX], enum_ptr[AVAHI_DOMAIN_NAME_MAX];
-		int mode = (strcmp("announce", csv_get_field(strdup(line), 7)) == 0) ? 1 : 0;
-		//Related to CSV
-
+		int mode = (strcmp("announce", row[6]) == 0) ? 1 : 0;
 		//Formation of the required names
 		int ret;
 		if ((ret = avahi_service_name_join(svc_name, sizeof(svc_name), name, type, domain)) < 0 ||
@@ -290,7 +230,6 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
         	(ret = avahi_service_name_join(enum_ptr, sizeof(enum_ptr), NULL, "_services._dns-sd._udp", domain)) < 0) {
         	exit(0);
     	}
-    	
 		//For TXT Records
 		//changing strlst
 		AvahiStringList *strlst = NULL;
@@ -308,7 +247,7 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
     	
     	n = 1;
 
-    	/* Try to fill up packet with more responses, if available */
+		/* Try to fill up packet with more responses, if available */
     	
     	//Original Record Order:
 		//AAAA    A    PTR    SRV    GARBAGE    PTR(DNS)
@@ -328,21 +267,24 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 			rj[3]->record->ttl = 0;
 
 		//For AAAA Records 
-		ipv6_address_converter(csv_get_field(strdup(line), 5), rj[0]->record->data.aaaa.address.address);
+		char *ipv6 = row[4];
+		ipv6_address_converter(ipv6, rj[0]->record->data.aaaa.address.address);
 
 		// For A Records
-		rj[1]->record->data.a.address.address = ipv4_address_converter(csv_get_field(strdup(line), 1));
+		char *ipv4 = row[0];
+		rj[1]->record->data.a.address.address = ipv4_address_converter(ipv4);
 	
 		//For enumeration record
 		rj[5]->record->key->name = avahi_normalize_name_strdup(enum_ptr);
 		rj[5]->record->data.ptr.name = avahi_normalize_name_strdup(ptr_name);
-		if(mode == 0)
+		if(mode == 0){
 			rj[5]->record->ttl = 0;
+		}
 		
 		
-    	    tempfp = fopen("log.txt", "a");
-			fprintf(tempfp, "changed values\n");
-			fclose(tempfp);
+    	tempfp = fopen("log.txt", "a");
+		fprintf(tempfp, "changed values\n");
+		fclose(tempfp);
 			
 		
 		//Original Record Order:
@@ -389,10 +331,9 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
     	
     	//Number of records added	
     	n+=5;
-		
 		//writing to announce.csv/withdraw.csv
 		csv_writer = (mode == 1) ? fopen("announce.csv", "a") : fopen("withdraw.csv", "a");
-		fprintf(csv_writer, "%s;%s;%s;%s;%s;%s;", csv_get_field(strdup(line), 1), csv_get_field(strdup(line), 2), csv_get_field(strdup(line), 3), csv_get_field(strdup(line), 4), csv_get_field(strdup(line), 5), csv_get_field(strdup(line), 6));
+		fprintf(csv_writer, "%s;%s;%s;%s;%s;%s;", ipv4, name, type, txt_name, ipv6, macadd);
 		fclose(csv_writer);
 		
 		avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
@@ -401,29 +342,80 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 		avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
 		avahi_dns_packet_free(p);
     	//free(tmp);
-		 
+
+
 	}
-	fclose(fp);
-	fp = fopen("ip.csv","w");
-	fclose(fp);
+	
+	//Closing the connection to sql and freeing the sql resultts
+	mysql_free_result(res);
+	mysql_close(conn);
 }
 
 
 void customised_query_packets(AvahiQueryJob *qj, AvahiQueryScheduler *s){
 	
-	FILE *fp = fopen("browse_service.csv","r"), *brw;
-    char line[1024];
-
+	FILE *brw;
     AvahiDnsPacket *p;
     unsigned n;
-    
 
-    while (fgets(line, 1024, fp)){
-        char *name = csv_get_field(strdup(line),1);
-        char*domain = ".local";
-        qj->key->name = strcat(name, domain);
-		//qj->key->name = line;
-        if (!(p = avahi_dns_packet_new_query(s->interface->hardware->mtu)))
+
+	MYSQL *conn;
+	MYSQL_RES *res;
+	MYSQL_ROW row;
+
+	char *server = "localhost";
+	char *user = "root";
+	char *password = "Covid@2020";
+	char *database = "agent_simul";
+
+	conn = mysql_init(NULL);
+
+	/* Connect to database */
+	if (!mysql_real_connect(conn, server, user, password, database, 0, NULL, 0)){
+		printf("Failed to connect to the MYSQL database\n");
+	}
+
+	res = mysql_use_result(conn);
+	/* Execute SQL query to fetch all table names.*/
+	if (mysql_query(conn, "show tables"))
+	{
+		printf(("Failed to execute MYSQL quesry. Error: %s\n", mysql_error(conn)));
+	}
+	
+	res = mysql_use_result(conn);
+	
+	/* Output table name */
+	
+	printf("MYSQL Tables in mydb database:\n");
+	while ((row = mysql_fetch_row(res)) != NULL){
+		
+		printf("%s \n", row[0]);
+	}
+	
+	
+	// free results
+	mysql_free_result(res);
+	
+	//Send SQL Query
+	if (mysql_query(conn, "select * from browse_service"))
+	{
+		printf("Failed to execute quesry. Error: %s\n", mysql_error(conn));
+	}
+	res = mysql_store_result(conn);
+	
+	int columns = mysql_num_fields(res);
+	
+	int i = 0;
+	
+	printf("Entries in the table my_table:\n");
+	while(row = mysql_fetch_row(res))
+	{
+		char *name = row[0];
+		char *domain = ".local";
+		char *mac = row[1];
+		qj->key->name = strcat(name, domain);
+		
+		if (!(p = avahi_dns_packet_new_query(s->interface->hardware->mtu)))
             return; /* OOM */
 
         if (!avahi_dns_packet_append_key(p, qj->key, 0))
@@ -432,16 +424,14 @@ void customised_query_packets(AvahiQueryJob *qj, AvahiQueryScheduler *s){
         n = 1;
         
         brw = fopen("browse.csv", "a");
-        fprintf(brw, "%s;%s;",  name, csv_get_field(strdup(line), 2));
+        fprintf(brw, "%s;%s;",  name, mac);
         fclose(brw);
 
-        avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_QDCOUNT, n);
+		avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_QDCOUNT, n);
         avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size, 2);
         avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
-        avahi_dns_packet_free(p);  
+        avahi_dns_packet_free(p);
 
-    }
-	fclose(fp);
-	fp = fopen("browse_service.csv", "w");
-	fclose(fp);
+	}
+	
 }
