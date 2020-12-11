@@ -22,7 +22,8 @@ interfaces = \
 
 # This cool debug trap works on i386/gcc only
 AM_CFLAGS+='-DDEBUG_TRAP=__asm__("int $$3")'
-
+AM_CFLAGS += -I/usr/include/mysql
+AM_CFLAGS += -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -lssl -lcrypto -ldl -lresolv
 if HAVE_GTK2OR3
 if HAVE_GLIB
 bin_PROGRAMS = \

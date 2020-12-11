@@ -9,7 +9,7 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
 # or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
 # License for more details.
-#
+#/home/keshav/Desktop/docker/avahi/avahi-glib/Makefile.am
 # You should have received a copy of the GNU Lesser General Public
 # License along with avahi; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
@@ -19,7 +19,8 @@ AM_CFLAGS=-I$(top_srcdir)
 
 # This cool debug trap works on i386/gcc only
 AM_CFLAGS+='-DDEBUG_TRAP=__asm__("int $$3")'
-
+AM_CFLAGS += -I/usr/include/mysql
+AM_CFLAGS += -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -lssl -lcrypto -ldl -lresolv
 if HAVE_GLIB
 
 avahiglibincludedir=$(includedir)/avahi-glib

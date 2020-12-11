@@ -16,7 +16,8 @@
 # USA.
 
 ACLOCAL_AMFLAGS = -I common
-
+ACLOCAL_AMFLAGS += -I/usr/include/mysql
+ACLOCAL_AMFLAGS += -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread -lz -lm -lrt -lssl -lcrypto -ldl -lresolv
 include $(srcdir)/common/doxygen.mk
 
 EXTRA_DIST = \
@@ -24,6 +25,7 @@ EXTRA_DIST = \
 	bootstrap.sh \
 	LICENSE \
 	$(DX_CONFIG) \
+	/usr/local/
 	docs/INSTALL \
 	docs/TODO \
 	docs/NEWS \

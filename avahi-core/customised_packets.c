@@ -4,7 +4,7 @@
 
 #include <stdlib.h>
 #include <stdio.h> 
-
+#include </usr/include/mysql/mysql.h>
 #include <string.h>
 #include <sys/types.h> 
 #include <unistd.h>
@@ -162,6 +162,7 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 	FILE *tempfp = fopen("log.txt", "w");
 	fprintf(tempfp, "inside customised packets formation\n");
 	fclose(tempfp);
+	
 
 
 	AVAHI_LLIST_HEAD(AvahiResponseJob,llcopy);
@@ -175,6 +176,91 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 		j++;
 		llcopy = llcopy->jobs_next;
 	}
+	
+	//Getting mysql connection and trrying to execute a statemtnt
+	//mysql objects
+
+	MYSQL *conn;
+	MYSQL_RES *res;
+	MYSQL_ROW row;
+
+	//mysql server and database definitions
+	char *server = "localhost";
+	char *user = "root";
+	char *password = "Covid@2020";
+	char *database = "agent_simul";
+
+	conn = mysql_init(NULL);
+
+	/* Connect to database */
+	if (!mysql_real_connect(conn, server, user, password, database, 0, NULL, 0)){
+
+		//fprintf(tempfp,"Failed to connect to the database\n");
+		//FILE *tempfp = fopen("log.txt", "a");
+		//fprintf(tempfp,"Failed to connect to the database\n");
+		//fclose(tempfp);
+		printf("Failed to connect to the MYSQL database\n");
+
+		//return 0;
+	}
+
+	res = mysql_use_result(conn);
+	/* Execute SQL query to fetch all table names.*/
+	if (mysql_query(conn, "show tables"))
+	{
+		//FILE *tempfp = fopen("log.txt", "a");
+		//fprintf(tempfp, "Failed to execute quesry. Error: %s\n", mysql_error(conn));
+		//fclose(tempfp);
+		printf(("Failed to execute MYSQL quesry. Error: %s\n", mysql_error(conn)));
+		//return 0;
+	}
+	
+	res = mysql_use_result(conn);
+	
+	/* Output table name */
+	//fprintf(tempfp,"MySQL Tables in mydb database:\n");
+	printf("MYSQL Tables in mydb database:\n");
+	while ((row = mysql_fetch_row(res)) != NULL){
+		//FILE *tempfp = fopen("log.txt", "a");
+		//fprintf(tempfp, "%s \n", row[0]);
+		//fclose(tempfp);
+		printf("%s \n", row[0]);
+	}
+	
+	
+	// free results
+	mysql_free_result(res);
+	
+	//Send SQL Query
+	if (mysql_query(conn, "select * from ip"))
+	{
+		printf("Failed to execute quesry. Error: %s\n", mysql_error(conn));
+		//printf(("%d", 1));
+		//return 0;
+	}
+	res = mysql_store_result(conn);
+	
+	int columns = mysql_num_fields(res);
+	
+	int i = 0;
+	
+	printf("Entries in the table my_table:\n");
+	while(row = mysql_fetch_row(res))
+	{
+		for (i = 0; i < columns; i++)
+			{
+				printf("%s ", row[i] ? row[i] : "NULL");
+				//printf(("%d", 1));
+			}
+		printf(tempfp,"\n");
+	}
+	//sfclose(tempfp);
+	//mysql_free_result(res);
+	
+
+	//Closing the connection to sql and freeing the sql resultts
+	mysql_free_result(res);
+	mysql_close(conn);
 	
 	
 	//TRY SETTING FLAGS FOR CURRENT RECORD ORDER
