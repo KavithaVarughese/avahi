@@ -86,20 +86,6 @@ struct AvahiQueryScheduler {
     AVAHI_LLIST_HEAD(AvahiKnownAnswer, known_answers);
 };
 
-//check if the file is empty
-/*int file_is_empty(FILE *fp){*/
-
-/*	int size;*/
-/*	if (NULL != fp) {*/
-/*    		fseek (fp, 0, SEEK_END);*/
-/*    		size = ftell(fp);*/
-
-/*    		if (0 == size) {*/
-/*        		return 1;*/
-/*    		}*/
-/*	}*/
-/*	return 0;	*/
-/*}*/
 //Converts records into byte buffers and appends into the packet
 static int add_record_to_packet(AvahiResponseScheduler *s, AvahiDnsPacket *p, AvahiResponseJob *rj) {
     assert(s);
@@ -169,10 +155,10 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
     MYSQL_ROW row;
 
     //mysql server and database definitions
-    char *server = "localhost";
-    char *user = "root";
-    char *password = "Covid@2020";
-    char *database = "agent_simul";
+    char *server = "172.23.0.2";
+    char *user = "mysql";
+    char *password = "supersecret";
+    char *database = "tgen";
 
     conn = mysql_init(NULL);
 
@@ -182,27 +168,14 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
     }
 
     res = mysql_use_result(conn);
-    /* Execute SQL query to fetch all table names.*/
-    if (mysql_query(conn, "show tables"))
-    {
-        printf(("Failed to execute MYSQL quesry. Error: %s\n", mysql_error(conn)));
-    }
     
-    res = mysql_use_result(conn);
-    
-    /* Output table name */
-    printf("MYSQL Tables in mydb database:\n");
-    while ((row = mysql_fetch_row(res)) != NULL){
-        printf("%s \n", row[0]);
-    }
-    
-    
-    // free results
-    mysql_free_result(res);
+    tempfp = fopen("log.txt", "w");
+    fprintf(tempfp, "sql connected?\n");
+    fclose(tempfp);
     
     //Send SQL Query
-    if (mysql_query(conn, "select * from ip")){
-        printf("Failed to execute quesry. Error: %s\n", mysql_error(conn));
+    if (mysql_query(conn, "select * from announce")){
+        printf("Failed to execute query. Error: %s\n", mysql_error(conn));
     }
     res = mysql_store_result(conn);
     
@@ -220,9 +193,9 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
         char *domain = "local"; //always
         char *host = "snoopsxox-VirtualBot.local"; // Also taken from CSV I believe
         char *txt_name = row[3];
-        char *macadd = row[5];
+        char *macadd = row[7];
         char ptr_name[AVAHI_DOMAIN_NAME_MAX], svc_name[AVAHI_DOMAIN_NAME_MAX], enum_ptr[AVAHI_DOMAIN_NAME_MAX];
-        int mode = (strcmp("announce", row[6]) == 0) ? 1 : 0;
+        int mode = (row[8] == 4500) ? 1 : 0;
         //Formation of the required names
         int ret;
         if ((ret = avahi_service_name_join(svc_name, sizeof(svc_name), name, type, domain)) < 0 ||
@@ -267,11 +240,11 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
             rj[3]->record->ttl = 0;
 
         //For AAAA Records 
-        char *ipv6 = row[4];
+        char *ipv6 = row[5];
         ipv6_address_converter(ipv6, rj[0]->record->data.aaaa.address.address);
 
         // For A Records
-        char *ipv4 = row[0];
+        char *ipv4 = row[4];
         rj[1]->record->data.a.address.address = ipv4_address_converter(ipv4);
     
         //For enumeration record
@@ -363,10 +336,10 @@ void customised_query_packets(AvahiQueryJob *qj, AvahiQueryScheduler *s){
     MYSQL_RES *res;
     MYSQL_ROW row;
 
-    char *server = "localhost";
-    char *user = "root";
-    char *password = "Covid@2020";
-    char *database = "agent_simul";
+    char *server = "`172.23.0.2";
+    char *user = "mysql";
+    char *password = "supersecret";
+    char *database = "tgen";
 
     conn = mysql_init(NULL);
 
