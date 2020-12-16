@@ -126,15 +126,6 @@ void ipv6_address_converter(char *s, uint8_t *address){
 //main function to obtain customised packets
 void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end, AvahiResponseJob *rj_copy, AvahiResponseScheduler *s){
 
-    FILE *csv_writer;
-    printf("\nSuccessfully in customised packets\n");
-    
-    FILE *tempfp = fopen("log.txt", "w");
-    fprintf(tempfp, "inside customised packets formation\n");
-    fclose(tempfp);
-    
-
-
     AVAHI_LLIST_HEAD(AvahiResponseJob,llcopy);
     llcopy = begin;
     
@@ -155,7 +146,7 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
     MYSQL_ROW row;
 
     //mysql server and database definitions
-    char *server = "172.23.0.2";
+    char *server = "172.22.0.2";
     char *user = "mysql";
     char *password = "supersecret";
     char *database = "tgen";
@@ -169,12 +160,8 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
 
     res = mysql_use_result(conn);
     
-    tempfp = fopen("log.txt", "w");
-    fprintf(tempfp, "sql connected?\n");
-    fclose(tempfp);
-    
     //Send SQL Query
-    if (mysql_query(conn, "select * from announce")){
+    if (mysql_query(conn, "select * from announce where byte_buffer IS NULL")){
         printf("Failed to execute query. Error: %s\n", mysql_error(conn));
     }
     res = mysql_store_result(conn);
@@ -183,11 +170,22 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
     
     int i = 0;
     
-    printf("Entries in the table my_table:\n");
     while(row = mysql_fetch_row(res))
     {
+	//checking the values
+	FILE *tempfp = fopen("log.txt", "a");
+    	fprintf(tempfp, "1: %s \n", row[1]);
+	fprintf(tempfp, "2: %s \n", row[2]);
+	fprintf(tempfp, "3: %s \n", row[3]);
+	fprintf(tempfp, "4: %s \n", row[4]);
+	fprintf(tempfp, "5: %s \n", row[5]);
+	fprintf(tempfp, "6: %s \n", row[6]);
+	fprintf(tempfp, "7: %s \n", row[7]);
+	fprintf(tempfp, "8: %s \n", row[8]);
+    	fclose(tempfp);
+
         AvahiDnsPacket *p;
-           unsigned n;		
+        unsigned n;		
         char *name = row[1];
         char *type = row[2];
         char *domain = "local"; //always
@@ -195,7 +193,7 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
         char *txt_name = row[3];
         char *macadd = row[7];
         char ptr_name[AVAHI_DOMAIN_NAME_MAX], svc_name[AVAHI_DOMAIN_NAME_MAX], enum_ptr[AVAHI_DOMAIN_NAME_MAX];
-        int mode = (row[8] == 4500) ? 1 : 0;
+        int mode = (strcmp(row[8], "4500") == 0) ? 1 : 0;
         //Formation of the required names
         int ret;
         if ((ret = avahi_service_name_join(svc_name, sizeof(svc_name), name, type, domain)) < 0 ||
@@ -219,13 +217,6 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
                 return; /* OOM */
         
         n = 1;
-
-        /* Try to fill up packet with more responses, if available */
-        
-        //Original Record Order:
-        //AAAA    A    PTR    SRV    GARBAGE    PTR(DNS)
-        // 0      1     2      3        4          5
-
 
         //For PTR Records
         rj[2]->record->key->name = avahi_normalize_name_strdup(ptr_name);
@@ -252,13 +243,7 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
         rj[5]->record->data.ptr.name = avahi_normalize_name_strdup(ptr_name);
         if(mode == 0){
             rj[5]->record->ttl = 0;
-        }
-        
-        
-        tempfp = fopen("log.txt", "a");
-        fprintf(tempfp, "changed values\n");
-        fclose(tempfp);
-            
+        }    
         
         //Original Record Order:
         //AAAA    A    PTR    SRV    GARBAGE    PTR(DNS)
@@ -280,9 +265,6 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
                 break;
             if (!add_record_to_packet(s, p, rj[5]))
                 break;
-            tempfp = fopen("log.txt", "a");
-            fprintf(tempfp, "announce\n");
-            fclose(tempfp);
         } else {
             if (!add_record_to_packet(s, p, rj[5]))
                 break;
@@ -297,25 +279,35 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
             rj_copy->record->ttl = 0;
             if(!add_record_to_packet(s, p, rj_copy))
                 break;
-            tempfp = fopen("log.txt", "a");
-            fprintf(tempfp, "withdraw\n");
-            fclose(tempfp);
+
         }
         
         //Number of records added	
         n+=5;
-        //writing to announce.csv/withdraw.csv
-        csv_writer = (mode == 1) ? fopen("announce.csv", "a") : fopen("withdraw.csv", "a");
-        fprintf(csv_writer, "%s;%s;%s;%s;%s;%s;", ipv4, name, type, txt_name, ipv6, macadd);
-        fclose(csv_writer);
-        
+ 
         avahi_dns_packet_set_field(p, AVAHI_DNS_FIELD_ANCOUNT, n);
+	tempfp = fopen("log.txt","a");
+	fprintf(tempfp, "\nAlmost there");
+	fclose(tempfp);
         //mode = 1 -> announce, 0 -> ttl0
-        avahi_hexstring(AVAHI_DNS_PACKET_DATA(p), p->size, mode);
-        avahi_hexdump_file(AVAHI_DNS_PACKET_DATA(p), p->size);
+	char hexval[1024];
+        avahi_hexstring(hexval, AVAHI_DNS_PACKET_DATA(p), p->size, mode);
         avahi_dns_packet_free(p);
         //free(tmp);
-
+	tempfp = fopen("log.txt","a");
+	fprintf(tempfp, "\ninserting");
+	fclose(tempfp);
+	
+	//Inserting hex into the database
+	char buf[1024] = {};
+	char query[] = {"insert into announce (byte_buffer) values (%s)"}; 
+	sprintf(buf, query, hexval);
+	if (mysql_query(conn, buf)){
+        	printf("Failed to execute query. Error: %s\n", mysql_error(conn));
+    	}
+	tempfp = fopen("log.txt","a");
+	fprintf(tempfp, "\ninserting completed \n");
+	fclose(tempfp);
 
     }
     
@@ -336,7 +328,7 @@ void customised_query_packets(AvahiQueryJob *qj, AvahiQueryScheduler *s){
     MYSQL_RES *res;
     MYSQL_ROW row;
 
-    char *server = "`172.23.0.2";
+    char *server = "`172.22.0.2";
     char *user = "mysql";
     char *password = "supersecret";
     char *database = "tgen";

@@ -32,12 +32,8 @@
 
 //Fills hex_packet.txt
 //mode = 1 -> announce, 0 -> ttl0
-void * avahi_hexstring(const void* p, size_t size, int mode) {
-    //system("pwd");
-    FILE *fp;
-    FILE *csv;
-    csv = (mode == 1)  ? fopen("announce.csv", "a+") : (mode == 0) ? fopen("withdraw.csv", "a+") : fopen("browse.csv", "a+");
-    fp = fopen("hex_packet.txt","a+");
+void * avahi_hexstring(char* hexval, const void* p, size_t size, int mode) {
+    
     const uint8_t *c = p;
     assert(p);
 
@@ -46,10 +42,8 @@ void * avahi_hexstring(const void* p, size_t size, int mode) {
 
         for (i = 0; i < 16; i++) {
             if (i < size){
-                printf("%02x", c[i]);
-                fprintf(fp,"%02x",c[i]);
-                fprintf(csv,"%02x",c[i]);
-		
+                sprintf(hexval, "%02x", c[i]);
+		hexval += 2;
 	    }
         }
 
@@ -60,12 +54,8 @@ void * avahi_hexstring(const void* p, size_t size, int mode) {
 
         size -= 16;
     }
-    printf("\n");
-    fprintf(fp,"\n");
-    fprintf(csv, ";\n");
-    fclose(csv);
-    fclose(fp);
 }
+
 
 //fills hex_packet_verbose.txt
 void avahi_hexdump_file(const void* p, size_t size) {
