@@ -295,18 +295,17 @@ void customized_packets_formation(AvahiResponseJob *begin, AvahiResponseJob *end
         avahi_dns_packet_free(p);
         //free(tmp);
 	tempfp = fopen("log.txt","a");
-	fprintf(tempfp, "\ninserting");
+	fprintf(tempfp, "\ninserting : %s", hexval);
 	fclose(tempfp);
 	
 	//Inserting hex into the database
 	char buf[1024] = {};
-	char query[] = {"insert into announce (byte_buffer) values (%s)"}; 
-	sprintf(buf, query, hexval);
+	sprintf(buf, "update announce set byte_buffer = \'%s\' where hash = \'%s\'" , hexval, row[9]);
 	if (mysql_query(conn, buf)){
         	printf("Failed to execute query. Error: %s\n", mysql_error(conn));
     	}
 	tempfp = fopen("log.txt","a");
-	fprintf(tempfp, "\ninserting completed \n");
+	fprintf(tempfp, "\ninserting completed : %s \n %s", row[10], buf);
 	fclose(tempfp);
 
     }
